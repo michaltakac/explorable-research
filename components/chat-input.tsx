@@ -336,7 +336,7 @@ export function ChatInput({
                   <Tooltip delayDuration={0}>
                     <TooltipTrigger asChild>
                       <Button
-                        disabled={isErrored}
+                        disabled={isErrored || (input.trim().length === 0 && files.length === 0 && pdfFiles.length === 0)}
                         variant="default"
                         size="icon"
                         type="submit"
