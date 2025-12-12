@@ -35,6 +35,12 @@ function truncateFileName(name: string, maxLength: number = 20): string {
   return `${truncatedBase}.${extension}`
 }
 
+// File limits
+const MAX_PDF_SIZE = 10 * 1024 * 1024 // 10MB
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024 // 5MB
+const MAX_PDF_COUNT = 5
+const MAX_IMAGE_COUNT = 8
+
 export function ChatInput({
   retry,
   isErrored,
@@ -71,16 +77,22 @@ export function ChatInput({
   function handleImageInput(e: React.ChangeEvent<HTMLInputElement>) {
     handleFileChange((prev) => {
       const newFiles = Array.from(e.target.files || [])
-      const uniqueFiles = newFiles.filter((file) => !isFileInArray(file, prev))
-      return [...prev, ...uniqueFiles]
+      const uniqueFiles = newFiles
+        .filter((file) => !isFileInArray(file, prev))
+        .filter((file) => file.size <= MAX_IMAGE_SIZE)
+      const availableSlots = MAX_IMAGE_COUNT - prev.length
+      return [...prev, ...uniqueFiles.slice(0, availableSlots)]
     })
   }
 
   function handlePdfInput(e: React.ChangeEvent<HTMLInputElement>) {
     handlePdfFileChange((prev) => {
       const newFiles = Array.from(e.target.files || [])
-      const uniqueFiles = newFiles.filter((file) => !isFileInArray(file, prev))
-      return [...prev, ...uniqueFiles]
+      const uniqueFiles = newFiles
+        .filter((file) => !isFileInArray(file, prev))
+        .filter((file) => file.size <= MAX_PDF_SIZE)
+      const availableSlots = MAX_PDF_COUNT - prev.length
+      return [...prev, ...uniqueFiles.slice(0, availableSlots)]
     })
   }
 
@@ -100,9 +112,9 @@ export function ChatInput({
         e.preventDefault()
 
         const file = item.getAsFile()
-        if (file) {
+        if (file && file.size <= MAX_IMAGE_SIZE) {
           handleFileChange((prev) => {
-            if (!isFileInArray(file, prev)) {
+            if (!isFileInArray(file, prev) && prev.length < MAX_IMAGE_COUNT) {
               return [...prev, file]
             }
             return prev
@@ -132,11 +144,11 @@ export function ChatInput({
     const allDroppedFiles = Array.from(e.dataTransfer.files)
     
     const droppedImages = allDroppedFiles.filter((file) =>
-      file.type.startsWith('image/'),
+      file.type.startsWith('image/') && file.size <= MAX_IMAGE_SIZE,
     )
     
     const droppedPdfs = allDroppedFiles.filter((file) =>
-      file.type === 'application/pdf',
+      file.type === 'application/pdf' && file.size <= MAX_PDF_SIZE,
     )
 
     if (droppedImages.length > 0) {
@@ -144,7 +156,8 @@ export function ChatInput({
         const uniqueFiles = droppedImages.filter(
           (file) => !isFileInArray(file, prev),
         )
-        return [...prev, ...uniqueFiles]
+        const availableSlots = MAX_IMAGE_COUNT - prev.length
+        return [...prev, ...uniqueFiles.slice(0, availableSlots)]
       })
     }
 
@@ -153,7 +166,8 @@ export function ChatInput({
         const uniqueFiles = droppedPdfs.filter(
           (file) => !isFileInArray(file, prev),
         )
-        return [...prev, ...uniqueFiles]
+        const availableSlots = MAX_PDF_COUNT - prev.length
+        return [...prev, ...uniqueFiles.slice(0, availableSlots)]
       })
     }
   }
