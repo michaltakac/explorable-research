@@ -17,9 +17,15 @@ export type MessageImage = {
   image: string
 }
 
+export type MessageFile = {
+  type: 'file'
+  data: string
+  mimeType: string
+}
+
 export type Message = {
   role: 'assistant' | 'user'
-  content: Array<MessageText | MessageCode | MessageImage>
+  content: Array<MessageText | MessageCode | MessageImage | MessageFile>
   object?: DeepPartial<FragmentSchema>
   result?: ExecutionResult
 }
@@ -32,6 +38,14 @@ export function toAISDKMessages(messages: Message[]) {
         return {
           type: 'text',
           text: content.text,
+        }
+      }
+
+      if (content.type === 'file') {
+        return {
+          type: 'file',
+          data: content.data,
+          mimeType: content.mimeType,
         }
       }
 
@@ -49,6 +63,23 @@ export async function toMessageImage(files: File[]) {
     files.map(async (file) => {
       const base64 = Buffer.from(await file.arrayBuffer()).toString('base64')
       return `data:${file.type};base64,${base64}`
+    }),
+  )
+}
+
+export async function toMessageFile(files: File[]): Promise<MessageFile[]> {
+  if (files.length === 0) {
+    return []
+  }
+
+  return Promise.all(
+    files.map(async (file) => {
+      const base64 = Buffer.from(await file.arrayBuffer()).toString('base64')
+      return {
+        type: 'file' as const,
+        data: base64,
+        mimeType: file.type,
+      }
     }),
   )
 }

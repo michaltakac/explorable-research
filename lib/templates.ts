@@ -23,9 +23,9 @@ const templates = {
       "typescript@~5.8.2",
       "vite@^6.2.0"
     ],
-    file: 'index.tsx',
+    file: 'App.tsx',
     instructions:
-      'A single-page app using React + Vite,that reloads automatically.',
+      'A single-page app template using React + Vite, that reloads automatically. When user provides a link to a ArXiv paper (ignore any other types of links and URLs), get the contents of this paper (PDF form available on ArXiv, so you need to access it through web), and create an explorable research page from it based on the template provided.',
     port: 3000,
   },
   [getTemplateIdSuffix('streamlit-developer')]: {
