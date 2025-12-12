@@ -8,10 +8,38 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { isFileInArray } from '@/lib/utils'
-import { ArrowUp, Paperclip, Square, X } from 'lucide-react'
+import { ArrowUp, FileText, ImageIcon, Paperclip, Square, X } from 'lucide-react'
 import { SetStateAction, useEffect, useMemo, useState } from 'react'
 import TextareaAutosize from 'react-textarea-autosize'
+
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
+}
+
+function truncateFileName(name: string, maxLength: number = 20): string {
+  if (name.length <= maxLength) return name
+  const extension = name.split('.').pop() || ''
+  const baseName = name.slice(0, name.length - extension.length - 1)
+  const truncatedBase = baseName.slice(0, maxLength - extension.length - 4) + '...'
+  return `${truncatedBase}.${extension}`
+}
+
+// File limits
+const MAX_PDF_SIZE = 10 * 1024 * 1024 // 10MB
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024 // 5MB
+const MAX_PDF_COUNT = 5
+const MAX_IMAGE_COUNT = 8
 
 export function ChatInput({
   retry,
@@ -26,6 +54,8 @@ export function ChatInput({
   isMultiModal,
   files,
   handleFileChange,
+  pdfFiles,
+  handlePdfFileChange,
   children,
 }: {
   retry: () => void
@@ -40,18 +70,38 @@ export function ChatInput({
   isMultiModal: boolean
   files: File[]
   handleFileChange: (change: SetStateAction<File[]>) => void
+  pdfFiles: File[]
+  handlePdfFileChange: (change: SetStateAction<File[]>) => void
   children: React.ReactNode
 }) {
-  function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleImageInput(e: React.ChangeEvent<HTMLInputElement>) {
     handleFileChange((prev) => {
       const newFiles = Array.from(e.target.files || [])
-      const uniqueFiles = newFiles.filter((file) => !isFileInArray(file, prev))
-      return [...prev, ...uniqueFiles]
+      const uniqueFiles = newFiles
+        .filter((file) => !isFileInArray(file, prev))
+        .filter((file) => file.size <= MAX_IMAGE_SIZE)
+      const availableSlots = MAX_IMAGE_COUNT - prev.length
+      return [...prev, ...uniqueFiles.slice(0, availableSlots)]
+    })
+  }
+
+  function handlePdfInput(e: React.ChangeEvent<HTMLInputElement>) {
+    handlePdfFileChange((prev) => {
+      const newFiles = Array.from(e.target.files || [])
+      const uniqueFiles = newFiles
+        .filter((file) => !isFileInArray(file, prev))
+        .filter((file) => file.size <= MAX_PDF_SIZE)
+      const availableSlots = MAX_PDF_COUNT - prev.length
+      return [...prev, ...uniqueFiles.slice(0, availableSlots)]
     })
   }
 
   function handleFileRemove(file: File) {
     handleFileChange((prev) => prev.filter((f) => f !== file))
+  }
+
+  function handlePdfRemove(file: File) {
+    handlePdfFileChange((prev) => prev.filter((f) => f !== file))
   }
 
   function handlePaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
@@ -62,9 +112,9 @@ export function ChatInput({
         e.preventDefault()
 
         const file = item.getAsFile()
-        if (file) {
+        if (file && file.size <= MAX_IMAGE_SIZE) {
           handleFileChange((prev) => {
-            if (!isFileInArray(file, prev)) {
+            if (!isFileInArray(file, prev) && prev.length < MAX_IMAGE_COUNT) {
               return [...prev, file]
             }
             return prev
@@ -91,28 +141,45 @@ export function ChatInput({
     e.stopPropagation()
     setDragActive(false)
 
-    const droppedFiles = Array.from(e.dataTransfer.files).filter((file) =>
-      file.type.startsWith('image/'),
+    const allDroppedFiles = Array.from(e.dataTransfer.files)
+    
+    const droppedImages = allDroppedFiles.filter((file) =>
+      file.type.startsWith('image/') && file.size <= MAX_IMAGE_SIZE,
+    )
+    
+    const droppedPdfs = allDroppedFiles.filter((file) =>
+      file.type === 'application/pdf' && file.size <= MAX_PDF_SIZE,
     )
 
-    if (droppedFiles.length > 0) {
+    if (droppedImages.length > 0) {
       handleFileChange((prev) => {
-        const uniqueFiles = droppedFiles.filter(
+        const uniqueFiles = droppedImages.filter(
           (file) => !isFileInArray(file, prev),
         )
-        return [...prev, ...uniqueFiles]
+        const availableSlots = MAX_IMAGE_COUNT - prev.length
+        return [...prev, ...uniqueFiles.slice(0, availableSlots)]
+      })
+    }
+
+    if (droppedPdfs.length > 0) {
+      handlePdfFileChange((prev) => {
+        const uniqueFiles = droppedPdfs.filter(
+          (file) => !isFileInArray(file, prev),
+        )
+        const availableSlots = MAX_PDF_COUNT - prev.length
+        return [...prev, ...uniqueFiles.slice(0, availableSlots)]
       })
     }
   }
 
-  const filePreview = useMemo(() => {
+  const imagePreview = useMemo(() => {
     if (files.length === 0) return null
     return Array.from(files).map((file) => {
       return (
         <div className="relative" key={file.name}>
           <span
             onClick={() => handleFileRemove(file)}
-            className="absolute top-[-8] right-[-8] bg-muted rounded-full p-1"
+            className="absolute top-[-8] right-[-8] bg-muted rounded-full p-1 z-10"
           >
             <X className="h-3 w-3 cursor-pointer" />
           </span>
@@ -126,20 +193,45 @@ export function ChatInput({
     })
   }, [files])
 
+  const pdfPreview = useMemo(() => {
+    if (pdfFiles.length === 0) return null
+    return Array.from(pdfFiles).map((file) => {
+      return (
+        <div 
+          className="relative flex items-center gap-2 bg-muted rounded-xl px-3 py-2 pr-8" 
+          key={file.name}
+        >
+          <span
+            onClick={() => handlePdfRemove(file)}
+            className="absolute top-[-6px] right-[-6px] bg-background border rounded-full p-1 z-10 cursor-pointer hover:bg-muted"
+          >
+            <X className="h-3 w-3" />
+          </span>
+          <FileText className="h-5 w-5 text-red-500 flex-shrink-0" />
+          <div className="flex flex-col min-w-0">
+            <span className="text-xs font-medium truncate max-w-[120px]" title={file.name}>
+              {truncateFileName(file.name)}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {formatFileSize(file.size)}
+            </span>
+          </div>
+        </div>
+      )
+    })
+  }, [pdfFiles])
+
   function onEnter(e: React.KeyboardEvent<HTMLFormElement>) {
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault()
-      if (e.currentTarget.checkValidity()) {
-        handleSubmit(e)
-      } else {
-        e.currentTarget.reportValidity()
-      }
+      handleSubmit(e)
     }
   }
 
   useEffect(() => {
     if (!isMultiModal) {
       handleFileChange([])
+      handlePdfFileChange([])
     }
   }, [isMultiModal])
 
@@ -187,8 +279,7 @@ export function ChatInput({
             minRows={1}
             maxRows={5}
             className="text-normal px-3 resize-none ring-0 bg-inherit w-full m-0 outline-none"
-            required={true}
-            placeholder="Describe your app..."
+            placeholder="Add instructions (optional)..."
             disabled={isErrored}
             value={input}
             onChange={handleInputChange}
@@ -197,35 +288,61 @@ export function ChatInput({
           <div className="flex p-3 gap-2 items-center">
             <input
               type="file"
-              id="multimodal"
-              name="multimodal"
+              id="image-upload"
+              name="image-upload"
               accept="image/*"
               multiple={true}
               className="hidden"
-              onChange={handleFileInput}
+              onChange={handleImageInput}
             />
-            <div className="flex items-center flex-1 gap-2">
-              <TooltipProvider>
-                <Tooltip delayDuration={0}>
-                  <TooltipTrigger asChild>
-                    <Button
-                      disabled={!isMultiModal || isErrored}
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className="rounded-xl h-10 w-10"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        document.getElementById('multimodal')?.click()
-                      }}
-                    >
-                      <Paperclip className="h-5 w-5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Add attachments</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              {files.length > 0 && filePreview}
+            <input
+              type="file"
+              id="pdf-upload"
+              name="pdf-upload"
+              accept="application/pdf"
+              multiple={true}
+              className="hidden"
+              onChange={handlePdfInput}
+            />
+            <div className="flex items-center flex-1 gap-2 flex-wrap">
+              <DropdownMenu>
+                <TooltipProvider>
+                  <Tooltip delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          disabled={!isMultiModal || isErrored}
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="rounded-xl h-10 w-10"
+                        >
+                          <Paperclip className="h-5 w-5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>Add attachments</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <DropdownMenuContent side="top" align="start" className="w-48">
+                  <DropdownMenuItem
+                    onClick={() => document.getElementById('pdf-upload')?.click()}
+                    className="cursor-pointer"
+                  >
+                    <FileText className="h-4 w-4 mr-2 text-red-500" />
+                    Upload PDFs
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => document.getElementById('image-upload')?.click()}
+                    className="cursor-pointer"
+                  >
+                    <ImageIcon className="h-4 w-4 mr-2 text-blue-500" />
+                    Upload images
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {pdfFiles.length > 0 && pdfPreview}
+              {files.length > 0 && imagePreview}
             </div>
             <div>
               {!isLoading ? (
@@ -233,7 +350,7 @@ export function ChatInput({
                   <Tooltip delayDuration={0}>
                     <TooltipTrigger asChild>
                       <Button
-                        disabled={isErrored}
+                        disabled={isErrored || (input.trim().length === 0 && files.length === 0 && pdfFiles.length === 0)}
                         variant="default"
                         size="icon"
                         type="submit"

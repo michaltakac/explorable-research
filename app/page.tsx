@@ -9,7 +9,7 @@ import { ChatSettings } from '@/components/chat-settings'
 import { NavBar } from '@/components/navbar'
 import { Preview } from '@/components/preview'
 import { useAuth } from '@/lib/auth'
-import { Message, toAISDKMessages, toMessageImage } from '@/lib/messages'
+import { Message, toAISDKMessages, toMessageImage, toMessageFile } from '@/lib/messages'
 import { LLMModelConfig } from '@/lib/models'
 import modelsList from '@/lib/models.json'
 import { FragmentSchema, fragmentSchema as schema } from '@/lib/schema'
@@ -25,13 +25,14 @@ import { useLocalStorage } from 'usehooks-ts'
 export default function Home() {
   const [chatInput, setChatInput] = useLocalStorage('chat', '')
   const [files, setFiles] = useState<File[]>([])
+  const [pdfFiles, setPdfFiles] = useState<File[]>([])
   const [selectedTemplate, setSelectedTemplate] = useState<string>(
     'auto',
   )
   const [languageModel, setLanguageModel] = useLocalStorage<LLMModelConfig>(
     'languageModel',
     {
-      model: 'openai/gpt-4o',
+      model: 'google/gemini-3-pro-preview:online',
     },
   )
 
@@ -60,7 +61,7 @@ export default function Home() {
   })
 
   const defaultModel = filteredModels.find(
-    (model) => model.id === 'anthropic/claude-3.5-sonnet',
+    (model) => model.id === 'google/gemini-3-pro-preview:online',
   ) || filteredModels[0]
 
   const currentModel = filteredModels.find(
@@ -179,12 +180,24 @@ export default function Home() {
       stop()
     }
 
-    const content: Message['content'] = [{ type: 'text', text: chatInput }]
+    const content: Message['content'] = []
     const images = await toMessageImage(files)
+    const pdfs = await toMessageFile(pdfFiles)
+
+    // Only add text content if there's actual text
+    if (chatInput.trim()) {
+      content.push({ type: 'text', text: chatInput })
+    }
 
     if (images.length > 0) {
       images.forEach((image) => {
         content.push({ type: 'image', image })
+      })
+    }
+
+    if (pdfs.length > 0) {
+      pdfs.forEach((pdf) => {
+        content.push(pdf)
       })
     }
 
@@ -205,6 +218,7 @@ export default function Home() {
 
     setChatInput('')
     setFiles([])
+    setPdfFiles([])
     setCurrentTab('code')
 
     posthog.capture('chat_submit', {
@@ -238,6 +252,10 @@ export default function Home() {
     setFiles(change)
   }
 
+  function handlePdfFileChange(change: SetStateAction<File[]>) {
+    setPdfFiles(change)
+  }
+
   function logout() {
     supabase
       ? supabase.auth.signOut()
@@ -264,6 +282,7 @@ export default function Home() {
     stop()
     setChatInput('')
     setFiles([])
+    setPdfFiles([])
     setMessages([])
     setFragment(undefined)
     setResult(undefined)
@@ -313,7 +332,7 @@ export default function Home() {
             isLoading={isLoading}
             setCurrentPreview={setCurrentPreview}
           />
-          <ChatInput
+            <ChatInput
             retry={retry}
             isErrored={error !== undefined}
             errorMessage={errorMessage}
@@ -326,6 +345,8 @@ export default function Home() {
             isMultiModal={currentModel?.multiModal || false}
             files={files}
             handleFileChange={handleFileChange}
+            pdfFiles={pdfFiles}
+            handlePdfFileChange={handlePdfFileChange}
           >
             <ChatPicker
               templates={templates}

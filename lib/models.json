@@ -1,312 +1,53 @@
 {
   "models": [
     {
-      "id": "openai/gpt-4o",
+      "id": "openai/gpt-5.1:online",
       "provider": "OpenAI",
       "providerId": "openai",
-      "name": "GPT-4o",
+      "name": "GPT-5.1",
       "multiModal": true
     },
     {
-      "id": "openai/gpt-4o-mini",
+      "id": "openai/gpt-5.1-codex:online",
       "provider": "OpenAI",
       "providerId": "openai",
-      "name": "GPT-4o mini",
+      "name": "GPT-5.1 Codex",
       "multiModal": true
     },
     {
-      "id": "openai/gpt-4-turbo",
-      "provider": "OpenAI",
-      "providerId": "openai",
-      "name": "GPT-4 Turbo",
-      "multiModal": true
-    },
-    {
-      "id": "openai/o1-mini",
-      "provider": "OpenAI",
-      "providerId": "openai",
-      "name": "o1-mini",
-      "multiModal": false
-    },
-    {
-      "id": "openai/o1-preview",
-      "provider": "OpenAI",
-      "providerId": "openai",
-      "name": "o1-preview",
-      "multiModal": false
-    },
-    {
-      "id": "openai/o3-mini",
-      "provider": "OpenAI",
-      "providerId": "openai",
-      "name": "o3-mini",
-      "multiModal": false
-    },
-    {
-      "id": "anthropic/claude-3.5-sonnet",
+      "id": "anthropic/claude-sonnet-4.5:online",
       "provider": "Anthropic",
       "providerId": "anthropic",
-      "name": "Claude 3.5 Sonnet",
+      "name": "Claude 4.5 Sonnet",
       "multiModal": true
     },
     {
-      "id": "anthropic/claude-3.5-haiku",
+      "id": "anthropic/claude-haiku-4.5:online",
       "provider": "Anthropic",
       "providerId": "anthropic",
-      "name": "Claude 3.5 Haiku",
+      "name": "Claude 4.5 Haiku",
       "multiModal": true
     },
     {
-      "id": "anthropic/claude-3-opus",
+      "id": "anthropic/claude-opus-4.5:online",
       "provider": "Anthropic",
       "providerId": "anthropic",
-      "name": "Claude 3 Opus",
+      "name": "Claude 4.5 Opus",
       "multiModal": true
     },
     {
-      "id": "anthropic/claude-3-sonnet",
-      "provider": "Anthropic",
-      "providerId": "anthropic",
-      "name": "Claude 3 Sonnet",
-      "multiModal": true
-    },
-    {
-      "id": "anthropic/claude-3-haiku",
-      "provider": "Anthropic",
-      "providerId": "anthropic",
-      "name": "Claude 3 Haiku",
-      "multiModal": true
-    },
-    {
-      "id": "anthropic/claude-sonnet-4",
-      "provider": "Anthropic",
-      "providerId": "anthropic",
-      "name": "Claude Sonnet 4",
-      "multiModal": true
-    },
-    {
-      "id": "anthropic/claude-opus-4",
-      "provider": "Anthropic",
-      "providerId": "anthropic",
-      "name": "Claude Opus 4",
-      "multiModal": true
-    },
-    {
-      "id": "google/gemini-2.0-flash-001",
+      "id": "google/gemini-3-pro-preview:online",
       "provider": "Google",
       "providerId": "google",
-      "name": "Gemini 2.0 Flash",
+      "name": "Gemini 3 Pro Preview",
       "multiModal": true
     },
     {
-      "id": "google/gemini-2.0-flash-lite-001",
-      "provider": "Google",
-      "providerId": "google",
-      "name": "Gemini 2.0 Flash Lite",
-      "multiModal": true
-    },
-    {
-      "id": "google/gemini-1.5-pro",
-      "provider": "Google",
-      "providerId": "google",
-      "name": "Gemini 1.5 Pro",
-      "multiModal": true
-    },
-    {
-      "id": "google/gemini-1.5-flash",
-      "provider": "Google",
-      "providerId": "google",
-      "name": "Gemini 1.5 Flash",
-      "multiModal": true
-    },
-    {
-      "id": "google/gemini-2.5-pro-preview",
-      "provider": "Google",
-      "providerId": "google",
-      "name": "Gemini 2.5 Pro Preview",
-      "multiModal": true
-    },
-    {
-      "id": "google/gemini-2.5-flash-preview",
-      "provider": "Google",
-      "providerId": "google",
-      "name": "Gemini 2.5 Flash Preview",
-      "multiModal": true
-    },
-    {
-      "id": "mistralai/mistral-large",
-      "provider": "Mistral",
-      "providerId": "mistral",
-      "name": "Mistral Large",
-      "multiModal": false
-    },
-    {
-      "id": "mistralai/mistral-medium",
-      "provider": "Mistral",
-      "providerId": "mistral",
-      "name": "Mistral Medium",
-      "multiModal": false
-    },
-    {
-      "id": "mistralai/mistral-small",
-      "provider": "Mistral",
-      "providerId": "mistral",
-      "name": "Mistral Small",
-      "multiModal": false
-    },
-    {
-      "id": "mistralai/mistral-nemo",
-      "provider": "Mistral",
-      "providerId": "mistral",
-      "name": "Mistral Nemo",
-      "multiModal": false
-    },
-    {
-      "id": "mistralai/codestral-latest",
-      "provider": "Mistral",
-      "providerId": "mistral",
-      "name": "Codestral",
-      "multiModal": false
-    },
-    {
-      "id": "mistralai/pixtral-large-latest",
-      "provider": "Mistral",
-      "providerId": "mistral",
-      "name": "Pixtral Large",
-      "multiModal": true
-    },
-    {
-      "id": "meta-llama/llama-3.3-70b-instruct",
-      "provider": "Meta",
-      "providerId": "meta",
-      "name": "Llama 3.3 70B",
-      "multiModal": false
-    },
-    {
-      "id": "meta-llama/llama-3.1-405b-instruct",
-      "provider": "Meta",
-      "providerId": "meta",
-      "name": "Llama 3.1 405B",
-      "multiModal": false
-    },
-    {
-      "id": "meta-llama/llama-3.1-70b-instruct",
-      "provider": "Meta",
-      "providerId": "meta",
-      "name": "Llama 3.1 70B",
-      "multiModal": false
-    },
-    {
-      "id": "meta-llama/llama-3.1-8b-instruct",
-      "provider": "Meta",
-      "providerId": "meta",
-      "name": "Llama 3.1 8B",
-      "multiModal": false
-    },
-    {
-      "id": "meta-llama/llama-4-maverick",
-      "provider": "Meta",
-      "providerId": "meta",
-      "name": "Llama 4 Maverick",
-      "multiModal": false
-    },
-    {
-      "id": "meta-llama/llama-4-scout",
-      "provider": "Meta",
-      "providerId": "meta",
-      "name": "Llama 4 Scout",
-      "multiModal": false
-    },
-    {
-      "id": "qwen/qwen-2.5-72b-instruct",
-      "provider": "Qwen",
-      "providerId": "qwen",
-      "name": "Qwen 2.5 72B",
-      "multiModal": false
-    },
-    {
-      "id": "qwen/qwen-2.5-coder-32b-instruct",
-      "provider": "Qwen",
-      "providerId": "qwen",
-      "name": "Qwen 2.5 Coder 32B",
-      "multiModal": false
-    },
-    {
-      "id": "qwen/qwq-32b",
-      "provider": "Qwen",
-      "providerId": "qwen",
-      "name": "QwQ 32B",
-      "multiModal": false
-    },
-    {
-      "id": "deepseek/deepseek-chat",
-      "provider": "DeepSeek",
-      "providerId": "deepseek",
-      "name": "DeepSeek V3",
-      "multiModal": false
-    },
-    {
-      "id": "deepseek/deepseek-r1",
-      "provider": "DeepSeek",
-      "providerId": "deepseek",
-      "name": "DeepSeek R1",
-      "multiModal": false
-    },
-    {
-      "id": "x-ai/grok-2",
+      "id": "x-ai/grok-4.1-fast:online",
       "provider": "xAI",
       "providerId": "xai",
-      "name": "Grok 2",
-      "multiModal": false
-    },
-    {
-      "id": "x-ai/grok-2-vision",
-      "provider": "xAI",
-      "providerId": "xai",
-      "name": "Grok 2 Vision",
+      "name": "Grok 4.1 Fast",
       "multiModal": true
-    },
-    {
-      "id": "x-ai/grok-3",
-      "provider": "xAI",
-      "providerId": "xai",
-      "name": "Grok 3",
-      "multiModal": false
-    },
-    {
-      "id": "x-ai/grok-3-mini",
-      "provider": "xAI",
-      "providerId": "xai",
-      "name": "Grok 3 Mini",
-      "multiModal": false
-    },
-    {
-      "id": "cohere/command-r-plus",
-      "provider": "Cohere",
-      "providerId": "cohere",
-      "name": "Command R+",
-      "multiModal": false
-    },
-    {
-      "id": "cohere/command-r",
-      "provider": "Cohere",
-      "providerId": "cohere",
-      "name": "Command R",
-      "multiModal": false
-    },
-    {
-      "id": "perplexity/sonar-pro",
-      "provider": "Perplexity",
-      "providerId": "perplexity",
-      "name": "Sonar Pro",
-      "multiModal": false
-    },
-    {
-      "id": "perplexity/sonar",
-      "provider": "Perplexity",
-      "providerId": "perplexity",
-      "name": "Sonar",
-      "multiModal": false
     }
   ]
 }
