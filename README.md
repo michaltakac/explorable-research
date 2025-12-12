@@ -11,18 +11,17 @@ Powered by [E2B](https://e2b.dev), [OpenRouter](https://openrouter.ai), and [AI 
 - **AI-Powered Generation** - Describe your research concept and get an interactive explorable instantly
 - **Secure Code Execution** - Uses [E2B SDK](https://github.com/e2b-dev/code-interpreter) to safely execute AI-generated code in sandboxed environments
 - **Real-time Streaming** - Watch your explorable come to life with live streaming UI updates
-- **Multiple Templates**:
-  - 🔬 Python data analyst (Jupyter, NumPy, Pandas, Matplotlib, Plotly)
-  - ⚛️ Next.js developer
-  - 🖼️ Vue.js developer
-  - 📊 Streamlit developer
-  - 🎛️ Gradio developer
-- **100+ AI Models** via [OpenRouter](https://openrouter.ai):
-  - OpenAI (GPT-4o, o1, o3)
-  - Anthropic (Claude 3.5, Claude 4)
-  - Google (Gemini 2.0, 2.5)
-  - Meta (Llama 3.3, Llama 4)
-  - DeepSeek, Mistral, xAI, and more...
+- **Explorable Research Template**:
+  - ⚛️ React + Vite with TypeScript
+  - 🎨 Three.js / React Three Fiber for 3D visualizations
+  - ✨ Motion (Framer Motion) for animations
+  - 🎯 Tailwind CSS for styling
+  - 📄 ArXiv paper support - paste a link and get an interactive explorable
+- **Supported AI Models** via [OpenRouter](https://openrouter.ai):
+  - OpenAI (GPT-5.1, GPT-5.1 Codex)
+  - Anthropic (Claude 4.5 Sonnet, Claude 4.5 Haiku, Claude 4.5 Opus)
+  - Google (Gemini 3 Pro Preview)
+  - xAI (Grok 4.1 Fast)
 - **Token-Efficient Editing** - Integrates with [Morph](https://morphllm.com/) for accurate, fast code modifications
 - Built with Next.js 14 (App Router), shadcn/ui, and TailwindCSS
 

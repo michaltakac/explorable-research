@@ -387,7 +387,18 @@ export function ChatInput({
         </div>
       </div>
       <p className="text-xs text-muted-foreground mt-2 text-center">
-        Fragments is an open-source project made by{' '}
+        <a href="https://github.com/michaltakac/explorable-research" target="_blank" className="underline hover:text-foreground">
+          Explorable Research
+        </a>
+        {' '}by{' '}
+        <a href="https://github.com/michaltakac" target="_blank" className="underline hover:text-foreground">
+          Michal Takáč
+        </a>
+        {' '}· Based on open-source{' '}
+        <a href="https://github.com/e2b-dev/fragments" target="_blank" className="text-[#ff8800]">
+          Fragments
+        </a>
+        {' '}by{' '}
         <a href="https://e2b.dev" target="_blank" className="text-[#ff8800]">
           ✶ E2B
         </a>

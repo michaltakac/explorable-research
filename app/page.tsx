@@ -14,7 +14,7 @@ import { LLMModelConfig } from '@/lib/models'
 import modelsList from '@/lib/models.json'
 import { FragmentSchema, fragmentSchema as schema } from '@/lib/schema'
 import { supabase } from '@/lib/supabase'
-import templates from '@/lib/templates'
+import templates, { getTemplateIdSuffix } from '@/lib/templates'
 import { ExecutionResult } from '@/lib/types'
 import { DeepPartial } from 'ai'
 import { experimental_useObject as useObject } from '@ai-sdk/react'
@@ -27,7 +27,7 @@ export default function Home() {
   const [files, setFiles] = useState<File[]>([])
   const [pdfFiles, setPdfFiles] = useState<File[]>([])
   const [selectedTemplate, setSelectedTemplate] = useState<string>(
-    'auto',
+    getTemplateIdSuffix('explorable-research-developer'),
   )
   const [languageModel, setLanguageModel] = useLocalStorage<LLMModelConfig>(
     'languageModel',
@@ -268,9 +268,9 @@ export default function Home() {
 
   function handleSocialClick(target: 'github' | 'x' | 'discord') {
     if (target === 'github') {
-      window.open('https://github.com/e2b-dev/fragments', '_blank')
+      window.open('https://github.com/michaltakac/explorable-research', '_blank')
     } else if (target === 'x') {
-      window.open('https://x.com/e2b', '_blank')
+      window.open('https://x.com/michaltakac', '_blank')
     } else if (target === 'discord') {
       window.open('https://discord.gg/e2b', '_blank')
     }
@@ -356,14 +356,15 @@ export default function Home() {
               languageModel={languageModel}
               onLanguageModelChange={handleLanguageModelChange}
             />
-            <ChatSettings
+            {/* TODO: Re-add chat settings later once we figure out common interface of supported OpenRouter models + have auth / accounts functionality */}
+            {/* <ChatSettings
               languageModel={languageModel}
               onLanguageModelChange={handleLanguageModelChange}
               apiKeyConfigurable={!process.env.NEXT_PUBLIC_NO_API_KEY_INPUT}
               baseURLConfigurable={!process.env.NEXT_PUBLIC_NO_BASE_URL_INPUT}
               useMorphApply={useMorphApply}
               onUseMorphApplyChange={setUseMorphApply}
-            />
+            /> */}
           </ChatInput>
         </div>
         <Preview

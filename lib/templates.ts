@@ -49,21 +49,6 @@ get the contents of this paper (PDF form available on ArXiv, so you need to acce
 and create an explorable research page from it based on the template provided.`,
     port: 3000,
   },
-  [getTemplateIdSuffix('streamlit-developer')]: {
-    name: 'Streamlit developer',
-    lib: [
-      'streamlit',
-      'pandas',
-      'numpy',
-      'matplotlib',
-      'requests',
-      'seaborn',
-      'plotly',
-    ],
-    file: 'app.py',
-    instructions: 'A streamlit app that reloads automatically.',
-    port: 8501,
-  },
 }
 
 export type Templates = typeof templates
