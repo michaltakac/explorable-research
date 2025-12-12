@@ -180,9 +180,14 @@ export default function Home() {
       stop()
     }
 
-    const content: Message['content'] = [{ type: 'text', text: chatInput }]
+    const content: Message['content'] = []
     const images = await toMessageImage(files)
     const pdfs = await toMessageFile(pdfFiles)
+
+    // Only add text content if there's actual text
+    if (chatInput.trim()) {
+      content.push({ type: 'text', text: chatInput })
+    }
 
     if (images.length > 0) {
       images.forEach((image) => {

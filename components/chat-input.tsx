@@ -210,11 +210,7 @@ export function ChatInput({
   function onEnter(e: React.KeyboardEvent<HTMLFormElement>) {
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault()
-      if (e.currentTarget.checkValidity()) {
-        handleSubmit(e)
-      } else {
-        e.currentTarget.reportValidity()
-      }
+      handleSubmit(e)
     }
   }
 
@@ -269,8 +265,7 @@ export function ChatInput({
             minRows={1}
             maxRows={5}
             className="text-normal px-3 resize-none ring-0 bg-inherit w-full m-0 outline-none"
-            required={true}
-            placeholder="Describe your app..."
+            placeholder="Add instructions (optional)..."
             disabled={isErrored}
             value={input}
             onChange={handleInputChange}
