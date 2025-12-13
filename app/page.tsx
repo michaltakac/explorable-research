@@ -5,9 +5,10 @@ import { AuthDialog } from '@/components/auth-dialog'
 import { Chat } from '@/components/chat'
 import { ChatInput } from '@/components/chat-input'
 import { ChatPicker } from '@/components/chat-picker'
-import { ChatSettings } from '@/components/chat-settings'
+import { CreatorInput } from '@/components/creator-input'
 import { NavBar } from '@/components/navbar'
 import { Preview } from '@/components/preview'
+import { Header, Hero, Features, HowItWorks, CTASection, Footer } from '@/components/landing'
 import { useAuth } from '@/lib/auth'
 import { Message, toAISDKMessages, toMessageImage, toMessageFile } from '@/lib/messages'
 import { LLMModelConfig } from '@/lib/models'
@@ -19,8 +20,9 @@ import { ExecutionResult } from '@/lib/types'
 import { DeepPartial } from 'ai'
 import { experimental_useObject as useObject } from '@ai-sdk/react'
 import { usePostHog } from 'posthog-js/react'
-import { SetStateAction, useEffect, useState } from 'react'
+import { SetStateAction, useEffect, useState, useRef } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
+import { ArrowLeft } from 'lucide-react'
 
 export default function Home() {
   const [chatInput, setChatInput] = useLocalStorage('chat', '')
@@ -47,11 +49,14 @@ export default function Home() {
   const [authView, setAuthView] = useState<ViewType>('sign_in')
   const [isRateLimited, setIsRateLimited] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [showChatInterface, setShowChatInterface] = useState(false)
   const { session, userTeam } = useAuth(setAuthDialog, setAuthView)
   const [useMorphApply, setUseMorphApply] = useLocalStorage(
     'useMorphApply',
     process.env.NEXT_PUBLIC_USE_MORPH_APPLY === 'true',
   )
+
+  const chatSectionRef = useRef<HTMLDivElement>(null)
 
   const filteredModels = modelsList.models.filter((model) => {
     if (process.env.NEXT_PUBLIC_HIDE_LOCAL_MODELS) {
@@ -74,6 +79,7 @@ export default function Home() {
       setLanguageModel({ ...languageModel, model: defaultModel.id })
     }
   }, [languageModel.model])
+  
   const currentTemplate =
     selectedTemplate === 'auto'
       ? templates
@@ -303,8 +309,209 @@ export default function Home() {
     setCurrentPreview({ fragment: undefined, result: undefined })
   }
 
+  function handleGetStarted() {
+    setShowChatInterface(true)
+    // Scroll to chat section after a small delay to allow state update
+    setTimeout(() => {
+      chatSectionRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }, 100)
+  }
+
+  function handleBackToLanding() {
+    setShowChatInterface(false)
+    handleClearChat()
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  // Show chat view only when fragment is ready (generation complete)
+  // During generation (isLoading), stay on creator view to show progress there
+  if (fragment || (messages.length > 0 && !isLoading)) {
+    return (
+      <main className="flex min-h-screen max-h-screen">
+        {supabase && (
+          <AuthDialog
+            open={isAuthDialogOpen}
+            setOpen={setAuthDialog}
+            view={authView}
+            supabase={supabase}
+          />
+        )}
+        <div className="grid w-full md:grid-cols-2">
+          <div
+            className={`flex flex-col w-full max-h-full max-w-[800px] mx-auto px-4 overflow-auto ${fragment ? 'col-span-1' : 'col-span-2'}`}
+          >
+            <NavBar
+              session={session}
+              showLogin={() => setAuthDialog(true)}
+              signOut={logout}
+              onSocialClick={handleSocialClick}
+              onClear={handleClearChat}
+              canClear={messages.length > 0}
+              canUndo={messages.length > 1 && !isLoading}
+              onUndo={handleUndo}
+              showGitHubStar={true}
+            />
+            <Chat
+              messages={messages}
+              isLoading={isLoading}
+              setCurrentPreview={setCurrentPreview}
+            />
+            <ChatInput
+              retry={retry}
+              isErrored={error !== undefined}
+              errorMessage={errorMessage}
+              isLoading={isLoading}
+              isRateLimited={isRateLimited}
+              stop={stop}
+              input={chatInput}
+              handleInputChange={handleSaveInputChange}
+              handleSubmit={handleSubmitAuth}
+              isMultiModal={currentModel?.multiModal || false}
+              files={files}
+              handleFileChange={handleFileChange}
+              pdfFiles={pdfFiles}
+              handlePdfFileChange={handlePdfFileChange}
+            >
+              <ChatPicker
+                templates={templates}
+                selectedTemplate={selectedTemplate}
+                onSelectedTemplateChange={setSelectedTemplate}
+                models={filteredModels}
+                languageModel={languageModel}
+                onLanguageModelChange={handleLanguageModelChange}
+              />
+            </ChatInput>
+          </div>
+          <Preview
+            teamID={userTeam?.id}
+            accessToken={session?.access_token}
+            selectedTab={currentTab}
+            onSelectedTabChange={setCurrentTab}
+            isChatLoading={isLoading}
+            isPreviewLoading={isPreviewLoading}
+            fragment={fragment}
+            result={result as ExecutionResult}
+            onClose={() => setFragment(undefined)}
+          />
+        </div>
+      </main>
+    )
+  }
+
+  // Creator view - centered PDF upload interface (after clicking Get Started)
+  if (showChatInterface) {
+    return (
+      <main className="min-h-screen flex flex-col bg-background">
+        {supabase && (
+          <AuthDialog
+            open={isAuthDialogOpen}
+            setOpen={setAuthDialog}
+            view={authView}
+            supabase={supabase}
+          />
+        )}
+        
+        {/* Navbar */}
+        <div className="w-full max-w-4xl mx-auto px-4">
+          <NavBar
+            session={session}
+            showLogin={() => setAuthDialog(true)}
+            signOut={logout}
+            onSocialClick={handleSocialClick}
+            onClear={handleClearChat}
+            canClear={false}
+            canUndo={false}
+            onUndo={handleUndo}
+            showGitHubStar={true}
+          />
+        </div>
+
+        {/* Centered content */}
+        <div className="flex-1 flex items-center justify-center px-4 py-4">
+          <div className="w-full max-w-2xl" ref={chatSectionRef}>
+            {/* Back button - hide when loading */}
+            {!isLoading && (
+              <div className="flex justify-center mb-4">
+                <button
+                  onClick={handleBackToLanding}
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Back to home
+                </button>
+              </div>
+            )}
+
+            {/* Headline - hide when loading since CreatorInput has its own */}
+            {!isLoading && (
+              <div className="text-center mb-6">
+                <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-3">
+                  Create your explorable
+                </h1>
+                <p className="text-muted-foreground">
+                  Upload a research article and we{"'"}ll transform it into an interactive website
+                </p>
+              </div>
+            )}
+
+            {/* Creator input */}
+            <CreatorInput
+              retry={retry}
+              isErrored={error !== undefined}
+              errorMessage={errorMessage}
+              isLoading={isLoading}
+              isRateLimited={isRateLimited}
+              stop={stop}
+              input={chatInput}
+              handleInputChange={handleSaveInputChange}
+              handleSubmit={handleSubmitAuth}
+              isMultiModal={currentModel?.multiModal || false}
+              files={files}
+              handleFileChange={handleFileChange}
+              pdfFiles={pdfFiles}
+              handlePdfFileChange={handlePdfFileChange}
+            >
+              <ChatPicker
+                templates={templates}
+                selectedTemplate={selectedTemplate}
+                onSelectedTemplateChange={setSelectedTemplate}
+                models={filteredModels}
+                languageModel={languageModel}
+                onLanguageModelChange={handleLanguageModelChange}
+              />
+            </CreatorInput>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <footer className="py-6 border-t border-border/50">
+          <div className="max-w-4xl mx-auto px-4">
+            <p className="text-xs text-muted-foreground text-center">
+              <a href="https://github.com/michaltakac/explorable-research" target="_blank" className="text-violet-600 dark:text-violet-400 hover:underline">
+                Explorable Research
+              </a>
+              {' by '}
+              <a href="https://github.com/michaltakac" target="_blank" className="text-violet-600 dark:text-violet-400 hover:underline">
+                Michal Takáč
+              </a>
+              {' · Based on '}
+              <a href="https://github.com/e2b-dev/fragments" target="_blank" className="text-violet-600 dark:text-violet-400 hover:underline">
+                Fragments
+              </a>
+              {' by '}
+              <a href="https://e2b.dev" target="_blank" className="text-violet-600 dark:text-violet-400 hover:underline">
+                ✶ E2B
+              </a>
+            </p>
+          </div>
+        </footer>
+      </main>
+    )
+  }
+
+  // Landing page view
   return (
-    <main className="flex min-h-screen max-h-screen">
+    <main className="min-h-screen bg-background">
       {supabase && (
         <AuthDialog
           open={isAuthDialogOpen}
@@ -313,72 +520,18 @@ export default function Home() {
           supabase={supabase}
         />
       )}
-      <div className="grid w-full md:grid-cols-2">
-        <div
-          className={`flex flex-col w-full max-h-full max-w-[800px] mx-auto px-4 overflow-auto ${fragment ? 'col-span-1' : 'col-span-2'}`}
-        >
-          <NavBar
-            session={session}
-            showLogin={() => setAuthDialog(true)}
-            signOut={logout}
-            onSocialClick={handleSocialClick}
-            onClear={handleClearChat}
-            canClear={messages.length > 0}
-            canUndo={messages.length > 1 && !isLoading}
-            onUndo={handleUndo}
-          />
-          <Chat
-            messages={messages}
-            isLoading={isLoading}
-            setCurrentPreview={setCurrentPreview}
-          />
-            <ChatInput
-            retry={retry}
-            isErrored={error !== undefined}
-            errorMessage={errorMessage}
-            isLoading={isLoading}
-            isRateLimited={isRateLimited}
-            stop={stop}
-            input={chatInput}
-            handleInputChange={handleSaveInputChange}
-            handleSubmit={handleSubmitAuth}
-            isMultiModal={currentModel?.multiModal || false}
-            files={files}
-            handleFileChange={handleFileChange}
-            pdfFiles={pdfFiles}
-            handlePdfFileChange={handlePdfFileChange}
-          >
-            <ChatPicker
-              templates={templates}
-              selectedTemplate={selectedTemplate}
-              onSelectedTemplateChange={setSelectedTemplate}
-              models={filteredModels}
-              languageModel={languageModel}
-              onLanguageModelChange={handleLanguageModelChange}
-            />
-            {/* TODO: Re-add chat settings later once we figure out common interface of supported OpenRouter models + have auth / accounts functionality */}
-            {/* <ChatSettings
-              languageModel={languageModel}
-              onLanguageModelChange={handleLanguageModelChange}
-              apiKeyConfigurable={!process.env.NEXT_PUBLIC_NO_API_KEY_INPUT}
-              baseURLConfigurable={!process.env.NEXT_PUBLIC_NO_BASE_URL_INPUT}
-              useMorphApply={useMorphApply}
-              onUseMorphApplyChange={setUseMorphApply}
-            /> */}
-          </ChatInput>
-        </div>
-        <Preview
-          teamID={userTeam?.id}
-          accessToken={session?.access_token}
-          selectedTab={currentTab}
-          onSelectedTabChange={setCurrentTab}
-          isChatLoading={isLoading}
-          isPreviewLoading={isPreviewLoading}
-          fragment={fragment}
-          result={result as ExecutionResult}
-          onClose={() => setFragment(undefined)}
-        />
-      </div>
+      
+      <Header onGetStarted={handleGetStarted} />
+      
+      <Hero onGetStarted={handleGetStarted} />
+      
+      <Features />
+      
+      <HowItWorks />
+      
+      <CTASection onGetStarted={handleGetStarted} />
+      
+      <Footer />
     </main>
   )
 }
