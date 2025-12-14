@@ -17,8 +17,8 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import {
-  DiscordLogoIcon,
   GitHubLogoIcon,
+  StarFilledIcon,
   TwitterLogoIcon,
 } from '@radix-ui/react-icons'
 import { Session } from '@supabase/supabase-js'
@@ -34,32 +34,48 @@ export function NavBar({
   onSocialClick,
   onUndo,
   canUndo,
+  showGitHubStar = false,
 }: {
   session: Session | null
   showLogin: () => void
   signOut: () => void
   onClear: () => void
   canClear: boolean
-  onSocialClick: (target: 'github' | 'x' | 'discord') => void
+  onSocialClick: (target: 'github' | 'x') => void
   onUndo: () => void
   canUndo: boolean
+  showGitHubStar?: boolean
 }) {
   return (
     <nav className="w-full flex bg-background py-4">
       <div className="flex flex-1 items-center">
-        <Link href="/" className="flex items-center gap-2" target="_blank">
+        <Link href="/" className="flex items-center gap-2">
           <Logo width={24} height={24} />
-          <h1 className="whitespace-pre">Fragments by </h1>
-        </Link>
-        <Link
-          href="https://e2b.dev"
-          className="underline decoration-[rgba(229,123,0,.3)] decoration-2 text-[#ff8800]"
-          target="_blank"
-        >
-          E2B
+          <h1 className="whitespace-pre font-medium">Explorable Research</h1>
         </Link>
       </div>
-      <div className="flex items-center gap-1 md:gap-4">
+      <div className="flex items-center gap-1 md:gap-3">
+        {/* GitHub Star button */}
+        {showGitHubStar && (
+          <TooltipProvider>
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <a
+                  href="https://github.com/michaltakac/explorable-research"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border bg-background hover:bg-muted transition-colors"
+                >
+                  <GitHubLogoIcon className="w-4 h-4" />
+                  <span>Star</span>
+                  <StarFilledIcon className="w-3.5 h-3.5 text-amber-500" />
+                </a>
+              </TooltipTrigger>
+              <TooltipContent>Star on GitHub</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+        
         <TooltipProvider>
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
@@ -98,7 +114,9 @@ export function NavBar({
             <TooltipContent>Toggle theme</TooltipContent>
           </Tooltip>
         </TooltipProvider>
-        {session ? (
+
+        {/* TODO: Add auth / accounts functionality (will connect to Supabase) */}
+        {/* {session ? (
           <DropdownMenu>
             <TooltipProvider>
               <Tooltip delayDuration={0}>
@@ -128,23 +146,19 @@ export function NavBar({
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => {
-                  window.open('https://e2b.dev', '_blank')
+                  window.open('https://github.com/michaltakac/explorable-research', '_blank')
                 }}
               >
                 <Logo className="mr-2 h-4 w-4 text-muted-foreground" />
-                About E2B
+                About Explorable Research
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onSocialClick('github')}>
                 <GitHubLogoIcon className="mr-2 h-4 w-4 text-muted-foreground" />
                 Star on GitHub
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onSocialClick('discord')}>
-                <DiscordLogoIcon className="mr-2 h-4 w-4 text-muted-foreground" />
-                Join us on Discord
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onSocialClick('x')}>
+              <DropdownMenuItem onClick={() => window.open('https://x.com/michaltakac', '_blank')}>
                 <TwitterLogoIcon className="mr-2 h-4 w-4 text-muted-foreground" />
-                Follow us on X
+                Follow @michaltakac on X
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={signOut}>
@@ -158,7 +172,7 @@ export function NavBar({
             Sign in
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
-        )}
+        )} */}
       </div>
     </nav>
   )
