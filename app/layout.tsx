@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     template: '%s · Explorable Research',
   },
   description: 'Create interactive, explorable websites from research articles. Transform complex research papers into engaging experiences that anyone can understand.',
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://explorable.research'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
   keywords: [
     'Research',
     'AI',
@@ -41,24 +41,24 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: process.env.NEXT_PUBLIC_SITE_URL || 'https://explorable.research',
+    url: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
     siteName: 'Explorable Research',
     title: 'Explorable Research — Transform research into interactive experiences',
     description: 'Create interactive, explorable websites from research articles. Transform complex research papers into engaging experiences that anyone can understand.',
-    images: [
-      {
-        url: '/opengraph-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'Explorable Research - Transform research into interactive experiences',
-      },
-    ],
+    // images: [
+    //   {
+    //     url: '/opengraph-image.png',
+    //     width: 1200,
+    //     height: 630,
+    //     alt: 'Explorable Research - Transform research into interactive experiences',
+    //   },
+    // ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Explorable Research — Transform research into interactive experiences',
     description: 'Create interactive, explorable websites from research articles. Transform complex research papers into engaging experiences that anyone can understand.',
-    images: ['/twitter-image.png'],
+    // images: ['/twitter-image.png'],
     creator: '@michaltakac',
   },
   robots: {
