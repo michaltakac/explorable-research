@@ -54,7 +54,7 @@ export function CTASection({ onGetStarted }: CTASectionProps) {
             onClick={onGetStarted}
             className="bg-white text-violet-700 hover:bg-white/90 shadow-xl h-14 px-8 text-lg font-semibold"
           >
-            Start Creating — It's Free
+            Start Creating — It&apos;s Free
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </motion.div>

@@ -3,7 +3,7 @@ import { FragmentSchema } from '@/lib/schema'
 import { ExecutionResult } from '@/lib/types'
 import { DeepPartial } from 'ai'
 import { LoaderIcon, Terminal } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 
 export function Chat({
   messages,
@@ -17,12 +17,14 @@ export function Chat({
     result: ExecutionResult | undefined
   }) => void
 }) {
+  const messagesKey = useMemo(() => JSON.stringify(messages), [messages])
+  
   useEffect(() => {
     const chatContainer = document.getElementById('chat-container')
     if (chatContainer) {
       chatContainer.scrollTop = chatContainer.scrollHeight
     }
-  }, [JSON.stringify(messages)])
+  }, [messagesKey])
 
   return (
     <div
@@ -53,6 +55,7 @@ export function Chat({
               }
               if (content.type === 'image') {
                 return (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     key={id}
                     src={content.image}

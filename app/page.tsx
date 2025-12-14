@@ -78,6 +78,7 @@ export default function Home() {
     if (languageModel.model && !filteredModels.find((m) => m.id === languageModel.model)) {
       setLanguageModel({ ...languageModel, model: defaultModel.id })
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [languageModel.model])
   
   const currentTemplate =
@@ -157,10 +158,12 @@ export default function Home() {
         })
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [object])
 
   useEffect(() => {
     if (error) stop()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [error])
 
   function setMessage(message: Partial<Message>, index?: number) {

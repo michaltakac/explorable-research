@@ -158,6 +158,7 @@ export function CreatorInput({
       handleFileChange([])
       handlePdfFileChange([])
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMultiModal])
 
   const hasPdfs = pdfFiles.length > 0
@@ -373,6 +374,7 @@ export function CreatorInput({
                   <div className="flex gap-2">
                     {files.map((file) => (
                       <div key={file.name} className="relative">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={URL.createObjectURL(file)}
                           alt={file.name}
