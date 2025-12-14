@@ -4,6 +4,7 @@ import Logo from '../logo'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { GitHubLogoIcon } from '@radix-ui/react-icons'
+import { track } from '@vercel/analytics'
 import { ArrowRight, Menu, X } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
@@ -20,7 +21,11 @@ export function Header({ onGetStarted }: HeaderProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 group">
+          <Link 
+            href="/" 
+            className="flex items-center gap-2.5 group"
+            onClick={() => track('Explorable Research Link Click', { location: 'header' })}
+          >
             <div className="flex items-center justify-center rounded-lg bg-primary p-1.5 transition-transform group-hover:scale-105">
               <Logo className="text-primary-foreground w-5 h-5" />
             </div>
@@ -46,6 +51,7 @@ export function Header({ onGetStarted }: HeaderProps) {
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
+              onClick={() => track('Star on GitHub Click', { location: 'header' })}
             >
               <GitHubLogoIcon className="w-4 h-4" />
               GitHub
@@ -56,7 +62,10 @@ export function Header({ onGetStarted }: HeaderProps) {
           <div className="hidden md:flex items-center gap-3">
             <ThemeToggle />
             <Button 
-              onClick={onGetStarted}
+              onClick={() => {
+                track('Get Started Click', { location: 'header' })
+                onGetStarted?.()
+              }}
               className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-lg shadow-violet-500/25 border-0"
             >
               Get Started
@@ -104,13 +113,17 @@ export function Header({ onGetStarted }: HeaderProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
+                onClick={() => track('Star on GitHub Click', { location: 'header-mobile' })}
               >
                 <GitHubLogoIcon className="w-4 h-4" />
                 GitHub
               </a>
               <div className="flex flex-col gap-2 pt-4 border-t border-border/50">
                 <Button 
-                  onClick={onGetStarted}
+                  onClick={() => {
+                    track('Get Started Click', { location: 'header-mobile' })
+                    onGetStarted?.()
+                  }}
                   className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white"
                 >
                   Get Started

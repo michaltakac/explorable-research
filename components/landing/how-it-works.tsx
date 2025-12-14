@@ -58,9 +58,6 @@ export function HowItWorks() {
 
         {/* Steps */}
         <div className="relative">
-          {/* Connection line */}
-          <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-violet-200 via-indigo-200 to-cyan-200 dark:from-violet-800 dark:via-indigo-800 dark:to-cyan-800 -translate-y-1/2" />
-          
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
             {steps.map((step, index) => (
               <motion.div

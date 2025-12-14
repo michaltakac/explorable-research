@@ -1,7 +1,10 @@
+'use client'
+
 import { GitHubIcon } from './icons'
 import { Separator } from './ui/separator'
 import { cn } from '@/lib/utils'
 import { StarFilledIcon } from '@radix-ui/react-icons'
+import { track } from '@vercel/analytics'
 
 const REPO_URL = 'https://github.com/michaltakac/explorable-research'
 
@@ -19,6 +22,7 @@ export function RepoBanner({ className }: { className?: string }) {
         'before:absolute before:inset-0 dark:before:bg-[radial-gradient(circle_at_10%_-50%,rgba(255,255,255,0.1),transparent_10%)] before:rounded-t-2xl before:pointer-events-none',
         className,
       )}
+      onClick={() => track('Star on GitHub Click', { location: 'repo-banner' })}
     >
       <GitHubIcon className="w-4 h-4" aria-hidden="true" />
       <Separator
