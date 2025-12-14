@@ -41,7 +41,7 @@ export async function publish(
 
     return {
       url: process.env.NEXT_PUBLIC_SITE_URL
-        ? `https://${process.env.NEXT_PUBLIC_SITE_URL}/s/${id}`
+        ? `${process.env.NEXT_PUBLIC_SITE_URL}/s/${id}`
         : `/s/${id}`,
     }
   }
