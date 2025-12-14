@@ -8,6 +8,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { isFileInArray } from '@/lib/utils'
+import { track } from '@vercel/analytics'
 import { ArrowRight, FileText, ImageIcon, Upload, Square, X, ChevronDown, ChevronUp, Loader2, Sparkles } from 'lucide-react'
 import { SetStateAction, useEffect, useMemo, useState } from 'react'
 import TextareaAutosize from 'react-textarea-autosize'
@@ -49,6 +50,7 @@ export function CreatorInput({
   handleFileChange,
   pdfFiles,
   handlePdfFileChange,
+  selectedModel,
   children,
 }: {
   retry: () => void
@@ -65,6 +67,7 @@ export function CreatorInput({
   handleFileChange: (change: SetStateAction<File[]>) => void
   pdfFiles: File[]
   handlePdfFileChange: (change: SetStateAction<File[]>) => void
+  selectedModel: string
   children: React.ReactNode
 }) {
   const [showInstructions, setShowInstructions] = useState(false)
@@ -146,9 +149,19 @@ export function CreatorInput({
     }
   }
 
+  function trackGenerateExplorable() {
+    track('Generate Explorable Click', {
+      customInstructions: input.trim(),
+      pdfs: JSON.stringify(pdfFiles.map((file) => ({ name: file.name, size: file.size }))),
+      images: JSON.stringify(files.map((file) => ({ name: file.name, size: file.size }))),
+      model: selectedModel,
+    })
+  }
+
   function onEnter(e: React.KeyboardEvent<HTMLFormElement>) {
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault()
+      trackGenerateExplorable()
       handleSubmit(e)
     }
   }
@@ -411,6 +424,7 @@ export function CreatorInput({
                     disabled={isErrored || !hasContent}
                     type="submit"
                     className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white gap-2"
+                    onClick={trackGenerateExplorable}
                   >
                     Generate Explorable
                     <ArrowRight className="w-4 h-4" />

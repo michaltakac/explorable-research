@@ -473,6 +473,7 @@ export default function Home() {
               handleFileChange={handleFileChange}
               pdfFiles={pdfFiles}
               handlePdfFileChange={handlePdfFileChange}
+              selectedModel={languageModel.model || ''}
             >
               <ChatPicker
                 templates={templates}

@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import { track } from '@vercel/analytics'
 import { ArrowRight, FileText, Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -64,7 +65,10 @@ export function Hero({ onGetStarted }: HeroProps) {
           >
             <Button 
               size="lg"
-              onClick={onGetStarted}
+              onClick={() => {
+                track('Start Creating Click', { location: 'hero' })
+                onGetStarted()
+              }}
               className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-xl shadow-violet-500/25 border-0 h-14 px-8 text-lg"
             >
               Start Creating
@@ -75,6 +79,7 @@ export function Hero({ onGetStarted }: HeroProps) {
               size="lg"
               className="h-14 px-8 text-lg border-2"
               onClick={() => {
+                track('See How It Works Click', { location: 'hero' })
                 const howItWorksSection = document.getElementById('how-it-works')
                 howItWorksSection?.scrollIntoView({ behavior: 'smooth' })
               }}

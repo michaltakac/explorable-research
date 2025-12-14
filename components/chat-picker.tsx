@@ -42,7 +42,7 @@ export function ChatPicker({
           <SelectContent side="top">
             <SelectGroup>
               <SelectLabel>Persona</SelectLabel>
-              <SelectItem value="auto">
+              {/* <SelectItem value="auto">
                 <div className="flex items-center space-x-2">
                   <Sparkles
                     className="flex text-[#a1a1aa]"
@@ -51,7 +51,7 @@ export function ChatPicker({
                   />
                   <span>Auto</span>
                 </div>
-              </SelectItem>
+              </SelectItem> */}
               {Object.entries(templates).map(([templateId, template]) => (
                 <SelectItem key={templateId} value={templateId}>
                   <div className="flex items-center space-x-2">

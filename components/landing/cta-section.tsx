@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import { track } from '@vercel/analytics'
 import { ArrowRight } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -51,7 +52,10 @@ export function CTASection({ onGetStarted }: CTASectionProps) {
         >
           <Button 
             size="lg"
-            onClick={onGetStarted}
+            onClick={() => {
+              track('Start Creating Click', { location: 'cta-section' })
+              onGetStarted()
+            }}
             className="bg-white text-violet-700 hover:bg-white/90 shadow-xl h-14 px-8 text-lg font-semibold"
           >
             Start Creating — It&apos;s Free

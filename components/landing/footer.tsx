@@ -2,6 +2,7 @@
 
 import Logo from '../logo'
 import { GitHubLogoIcon, TwitterLogoIcon } from '@radix-ui/react-icons'
+import { track } from '@vercel/analytics'
 import Link from 'next/link'
 
 export function Footer() {
@@ -11,7 +12,11 @@ export function Footer() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           {/* Logo and tagline */}
           <div className="flex flex-col items-center md:items-start gap-2">
-            <Link href="/" className="flex items-center gap-2.5">
+            <Link 
+              href="/" 
+              className="flex items-center gap-2.5"
+              onClick={() => track('Explorable Research Link Click', { location: 'footer' })}
+            >
               <div className="flex items-center justify-center rounded-lg bg-primary p-1.5">
                 <Logo className="text-primary-foreground w-5 h-5" />
               </div>
@@ -29,6 +34,7 @@ export function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
+              onClick={() => track('Star on GitHub Click', { location: 'footer' })}
             >
               <GitHubLogoIcon className="w-5 h-5" />
             </a>
@@ -55,6 +61,7 @@ export function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               className="text-violet-600 dark:text-violet-400 hover:underline"
+              onClick={() => track('Michal Takáč Link Click', { location: 'footer' })}
             >
               Michal Takáč
             </a>

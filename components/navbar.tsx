@@ -22,6 +22,7 @@ import {
   TwitterLogoIcon,
 } from '@radix-ui/react-icons'
 import { Session } from '@supabase/supabase-js'
+import { track } from '@vercel/analytics'
 import { ArrowRight, LogOut, Trash, Undo } from 'lucide-react'
 import Link from 'next/link'
 
@@ -49,7 +50,11 @@ export function NavBar({
   return (
     <nav className="w-full flex bg-background py-4">
       <div className="flex flex-1 items-center">
-        <Link href="/" className="flex items-center gap-2">
+        <Link 
+          href="/" 
+          className="flex items-center gap-2"
+          onClick={() => track('Explorable Research Link Click', { location: 'navbar' })}
+        >
           <Logo width={24} height={24} />
           <h1 className="whitespace-pre font-medium">Explorable Research</h1>
         </Link>
@@ -65,6 +70,7 @@ export function NavBar({
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border bg-background hover:bg-muted transition-colors"
+                  onClick={() => track('Star on GitHub Click', { location: 'navbar' })}
                 >
                   <GitHubLogoIcon className="w-4 h-4" />
                   <span>Star</span>
