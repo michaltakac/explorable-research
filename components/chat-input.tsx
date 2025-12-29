@@ -38,7 +38,7 @@ function truncateFileName(name: string, maxLength: number = 20): string {
 // File limits
 const MAX_PDF_SIZE = 10 * 1024 * 1024 // 10MB
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024 // 5MB
-const MAX_PDF_COUNT = 5
+const MAX_PDF_COUNT = 4
 const MAX_IMAGE_COUNT = 8
 
 export function ChatInput({
