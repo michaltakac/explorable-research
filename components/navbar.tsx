@@ -121,8 +121,13 @@ export function NavBar({
           </Tooltip>
         </TooltipProvider>
 
-        {/* TODO: Add auth / accounts functionality (will connect to Supabase) */}
-        {/* {session ? (
+        {session && (
+          <Button variant="ghost" asChild className="hidden sm:inline-flex">
+            <Link href="/projects">Projects</Link>
+          </Button>
+        )}
+
+        {session ? (
           <DropdownMenu>
             <TooltipProvider>
               <Tooltip delayDuration={0}>
@@ -146,10 +151,13 @@ export function NavBar({
               <DropdownMenuLabel className="flex flex-col">
                 <span className="text-sm">My Account</span>
                 <span className="text-xs text-muted-foreground">
-                  {session.user.email}
+                  {session.user.email || 'Signed in'}
                 </span>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/projects">Projects</Link>
+              </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {
                   window.open('https://github.com/michaltakac/explorable-research', '_blank')
@@ -178,7 +186,7 @@ export function NavBar({
             Sign in
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
-        )} */}
+        )}
       </div>
     </nav>
   )

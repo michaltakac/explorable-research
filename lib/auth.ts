@@ -14,7 +14,11 @@ type UserTeam = {
 export async function getUserTeam(
   session: Session,
 ): Promise<UserTeam | undefined> {
-  const { data: defaultTeam } = await supabase!
+  if (!supabase) {
+    return undefined
+  }
+
+  const { data: defaultTeam } = await supabase
     .from('users_teams')
     .select('teams (id, name, tier, email)')
     .eq('user_id', session?.user.id)
@@ -35,8 +39,8 @@ export function useAuth(
 
   useEffect(() => {
     if (!supabase) {
-      console.warn('Supabase is not initialized')
-      return setSession({ user: { email: 'demo@e2b.dev' } } as Session)
+      setSession(null)
+      return
     }
 
     supabase.auth.getSession().then(({ data: { session } }) => {
