@@ -1,10 +1,10 @@
-import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
 import { kv } from '@vercel/kv'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function middleware(req: NextRequest) {
-  const res = NextResponse.next()
+  let res = NextResponse.next()
 
   // Handle short URL redirects for /s/:id
   if (req.nextUrl.pathname.startsWith('/s/')) {
@@ -33,19 +33,25 @@ export async function middleware(req: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_URL &&
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY
     ) {
-      // Create Supabase client to validate session
-      const supabase = createClient(
+      // Create Supabase SSR client for middleware
+      const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL,
         process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY,
         {
-          auth: {
-            storage: {
-              getItem: (key: string) => {
-                const cookie = req.cookies.get(key)
-                return cookie?.value ?? null
-              },
-              setItem: () => {},
-              removeItem: () => {},
+          cookies: {
+            getAll() {
+              return req.cookies.getAll()
+            },
+            setAll(cookiesToSet) {
+              cookiesToSet.forEach(({ name, value, options }) => {
+                req.cookies.set(name, value)
+              })
+              res = NextResponse.next({
+                request: req,
+              })
+              cookiesToSet.forEach(({ name, value, options }) => {
+                res.cookies.set(name, value, options)
+              })
             },
           },
         },
