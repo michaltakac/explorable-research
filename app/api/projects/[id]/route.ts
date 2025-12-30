@@ -24,7 +24,7 @@ export async function GET(
     const { data, error } = await supabase
       .from('projects')
       .select('*')
-      .eq('id', id)
+      .eq('id' as any, id)
       .single()
 
     if (error) {
@@ -76,7 +76,7 @@ export async function PATCH(
     const { data, error } = await supabase
       .from('projects')
       .update(updateData)
-      .eq('id', id)
+      .eq('id' as any, id)
       .select()
       .single()
 
@@ -125,7 +125,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('projects')
       .delete()
-      .eq('id', id)
+      .eq('id' as any, id)
 
     if (error) {
       if (error.code === 'PGRST116') {
