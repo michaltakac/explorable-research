@@ -10,9 +10,9 @@ export async function GET(
 ) {
   try {
     const user = await requireAuth()
-    const supabase = await createServerClient()
+    const supabaseClient = await createServerClient()
 
-    if (!supabase) {
+    if (!supabaseClient) {
       return NextResponse.json(
         { error: 'Database not configured' },
         { status: 500 },
@@ -22,10 +22,10 @@ export async function GET(
     const resolvedParams = await params
     const projectId = resolvedParams.id
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('projects')
       .select('*')
-      .eq('id', projectId)
+      .eq('id', projectId as any)
       .single()
 
     if (error) {
@@ -61,8 +61,8 @@ export async function PATCH(
     const user = await requireAuth()
     const updateData: ProjectUpdate = await req.json()
 
-    const supabase = await createServerClient()
-    if (!supabase) {
+    const supabaseClient = await createServerClient()
+    if (!supabaseClient) {
       return NextResponse.json(
         { error: 'Database not configured' },
         { status: 500 },
@@ -75,10 +75,10 @@ export async function PATCH(
     // Prevent user from changing ownership
     delete (updateData as any).user_id
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('projects')
       .update(updateData)
-      .eq('id', projectId)
+      .eq('id', projectId as any)
       .select()
       .single()
 
@@ -113,9 +113,9 @@ export async function DELETE(
 ) {
   try {
     const user = await requireAuth()
-    const supabase = await createServerClient()
+    const supabaseClient = await createServerClient()
 
-    if (!supabase) {
+    if (!supabaseClient) {
       return NextResponse.json(
         { error: 'Database not configured' },
         { status: 500 },
@@ -125,10 +125,10 @@ export async function DELETE(
     const resolvedParams = await params
     const projectId = resolvedParams.id
 
-    const { error } = await supabase
+    const { error } = await supabaseClient
       .from('projects')
       .delete()
-      .eq('id', projectId)
+      .eq('id', projectId as any)
 
     if (error) {
       if (error.code === 'PGRST116') {

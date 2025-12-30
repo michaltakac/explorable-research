@@ -20,8 +20,8 @@ export async function POST(req: Request) {
       )
     }
 
-    const supabase = await createServerClient()
-    if (!supabase) {
+    const supabaseClient = await createServerClient()
+    if (!supabaseClient) {
       return NextResponse.json(
         { error: 'Database not configured' },
         { status: 500 },
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     }
 
     // Insert project
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('projects')
       .insert(projectData)
       .select()
@@ -63,8 +63,8 @@ export async function GET(req: Request) {
     // Require authentication
     const user = await requireAuth()
 
-    const supabase = await createServerClient()
-    if (!supabase) {
+    const supabaseClient = await createServerClient()
+    if (!supabaseClient) {
       return NextResponse.json(
         { error: 'Database not configured' },
         { status: 500 },
@@ -73,7 +73,7 @@ export async function GET(req: Request) {
 
     // Get all projects for the authenticated user
     // RLS policies will automatically filter to only user's projects
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('projects')
       .select('*')
       .order('created_at', { ascending: false })

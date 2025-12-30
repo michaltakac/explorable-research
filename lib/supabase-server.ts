@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import type { Database } from './database.types'
 
@@ -6,7 +6,7 @@ import type { Database } from './database.types'
  * Server-side Supabase client for API routes and server components
  * This client uses cookies to maintain user sessions
  */
-export async function createServerClient() {
+export async function createServerClient(): Promise<SupabaseClient<Database> | null> {
   const cookieStore = await cookies()
 
   if (
