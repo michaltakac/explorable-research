@@ -36,7 +36,7 @@ function truncateFileName(name: string, maxLength: number = 20): string {
 }
 
 // File limits
-const MAX_PDF_SIZE = 10 * 1024 * 1024 // 10MB
+const MAX_PDF_SIZE = 3.3 * 1024 * 1024 // 3.3MB (Vercel has 4.5MB limit; base64 encoding adds ~33% overhead)
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024 // 5MB
 const MAX_PDF_COUNT = 4
 const MAX_IMAGE_COUNT = 8
