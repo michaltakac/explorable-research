@@ -6,7 +6,7 @@ type ProjectUpdate = Database['public']['Tables']['projects']['Update']
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const user = await requireAuth()
@@ -19,10 +19,12 @@ export async function GET(
       )
     }
 
+    const { id } = await params
+
     const { data, error } = await supabase
       .from('projects')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (error) {
@@ -52,7 +54,7 @@ export async function GET(
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const user = await requireAuth()
@@ -66,13 +68,15 @@ export async function PATCH(
       )
     }
 
+    const { id } = await params
+
     // Prevent user from changing ownership
     delete (updateData as any).user_id
 
     const { data, error } = await supabase
       .from('projects')
       .update(updateData)
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single()
 
@@ -103,7 +107,7 @@ export async function PATCH(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const user = await requireAuth()
@@ -116,10 +120,12 @@ export async function DELETE(
       )
     }
 
+    const { id } = await params
+
     const { error } = await supabase
       .from('projects')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
 
     if (error) {
       if (error.code === 'PGRST116') {
