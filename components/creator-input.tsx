@@ -411,7 +411,7 @@ export function CreatorInput({
       )}
 
       {/* Model/Template selector and submit - or Stop button when loading */}
-      <div className="mt-6 flex items-center justify-between gap-4">
+      <div className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         {!isLoading ? (
           <>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -423,7 +423,7 @@ export function CreatorInput({
                   <Button
                     disabled={isErrored || !hasContent}
                     type="submit"
-                    className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white gap-2"
+                    className="w-full sm:w-auto bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white gap-2"
                     onClick={trackGenerateExplorable}
                   >
                     Generate Explorable
