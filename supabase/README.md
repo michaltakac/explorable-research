@@ -12,9 +12,11 @@ This document outlines how to set up Supabase for the Explorable Research applic
 Add the following environment variables to your `.env.local` file and Vercel project settings:
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=https://ytezflduoydgrfxrkvpd.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=sb_publishable_ggy15xgHC4sVbE1vGEmeyw_l1XKQHDO
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your_supabase_anon_key
 ```
+
+You can find these values in your Supabase project dashboard under Settings > API.
 
 ## Database Setup
 
@@ -48,7 +50,7 @@ This will create:
 2. Enable the Google provider
 3. Add your Google OAuth credentials:
    - Create OAuth credentials in [Google Cloud Console](https://console.cloud.google.com)
-   - Add authorized redirect URI: `https://ytezflduoydgrfxrkvpd.supabase.co/auth/v1/callback`
+   - Add authorized redirect URI: `https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback`
    - Copy Client ID and Client Secret to Supabase
 4. Save configuration
 
@@ -58,7 +60,7 @@ This will create:
 2. Enable the GitHub provider
 3. Add your GitHub OAuth credentials:
    - Create OAuth App in [GitHub Developer Settings](https://github.com/settings/developers)
-   - Add authorization callback URL: `https://ytezflduoydgrfxrkvpd.supabase.co/auth/v1/callback`
+   - Add authorization callback URL: `https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback`
    - Copy Client ID and Client Secret to Supabase
 4. Save configuration
 
