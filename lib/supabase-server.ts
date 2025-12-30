@@ -6,8 +6,8 @@ import type { Database } from './database.types'
  * Server-side Supabase client for API routes and server components
  * This client uses cookies to maintain user sessions
  */
-export function createServerClient() {
-  const cookieStore = cookies()
+export async function createServerClient() {
+  const cookieStore = await cookies()
 
   if (
     !process.env.NEXT_PUBLIC_SUPABASE_URL ||
@@ -35,7 +35,7 @@ export function createServerClient() {
  * Returns null if not authenticated
  */
 export async function getServerUser() {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   if (!supabase) return null
 
   const {
@@ -55,7 +55,7 @@ export async function getServerUser() {
  * Returns null if not authenticated
  */
 export async function getServerSession() {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   if (!supabase) return null
 
   const {
@@ -88,7 +88,7 @@ export async function requireAuth() {
  * Get user's default team
  */
 export async function getUserDefaultTeam(userId: string) {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   if (!supabase) return null
 
   const { data, error } = await supabase

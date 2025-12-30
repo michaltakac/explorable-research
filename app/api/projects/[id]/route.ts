@@ -10,7 +10,7 @@ export async function GET(
 ) {
   try {
     const user = await requireAuth()
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
 
     if (!supabase) {
       return NextResponse.json(
@@ -60,7 +60,7 @@ export async function PATCH(
     const user = await requireAuth()
     const updateData: ProjectUpdate = await req.json()
 
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     if (!supabase) {
       return NextResponse.json(
         { error: 'Database not configured' },
@@ -111,7 +111,7 @@ export async function DELETE(
 ) {
   try {
     const user = await requireAuth()
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
 
     if (!supabase) {
       return NextResponse.json(

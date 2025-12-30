@@ -20,7 +20,7 @@ export async function POST(req: Request) {
       )
     }
 
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     if (!supabase) {
       return NextResponse.json(
         { error: 'Database not configured' },
@@ -63,7 +63,7 @@ export async function GET(req: Request) {
     // Require authentication
     const user = await requireAuth()
 
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     if (!supabase) {
       return NextResponse.json(
         { error: 'Database not configured' },
