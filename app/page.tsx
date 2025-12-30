@@ -17,6 +17,7 @@ import { FragmentSchema, fragmentSchema as schema } from '@/lib/schema'
 import { supabase } from '@/lib/supabase'
 import templates, { getTemplateIdSuffix } from '@/lib/templates'
 import { ExecutionResult } from '@/lib/types'
+import { saveProject } from '@/lib/projects'
 import { DeepPartial } from 'ai'
 import { experimental_useObject as useObject } from '@ai-sdk/react'
 import { usePostHog } from 'posthog-js/react'
@@ -125,6 +126,22 @@ export default function Home() {
         const result = await response.json()
         console.log('result', result)
         posthog.capture('sandbox_created', { url: result.url })
+
+        // Save project to database if user is authenticated
+        if (session?.user?.id && fragment) {
+          const modelProvider = currentModel?.providerId
+          const modelName = currentModel?.name
+
+          await saveProject(
+            fragment as FragmentSchema,
+            result,
+            session.user.id,
+            userTeam?.id,
+            modelProvider && modelName
+              ? { provider: modelProvider, name: modelName }
+              : undefined,
+          )
+        }
 
         setResult(result)
         setCurrentPreview({ fragment, result })

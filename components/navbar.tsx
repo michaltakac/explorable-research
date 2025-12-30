@@ -23,8 +23,9 @@ import {
 } from '@radix-ui/react-icons'
 import { Session } from '@supabase/supabase-js'
 import { track } from '@vercel/analytics'
-import { ArrowRight, LogOut, Trash, Undo } from 'lucide-react'
+import { ArrowRight, LogOut, Trash, Undo, FolderOpen } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 export function NavBar({
   session,
@@ -47,6 +48,7 @@ export function NavBar({
   canUndo: boolean
   showGitHubStar?: boolean
 }) {
+  const router = useRouter()
   return (
     <nav className="w-full flex bg-background py-4">
       <div className="flex flex-1 items-center">
@@ -121,14 +123,13 @@ export function NavBar({
           </Tooltip>
         </TooltipProvider>
 
-        {/* TODO: Add auth / accounts functionality (will connect to Supabase) */}
-        {/* {session ? (
+        {session ? (
           <DropdownMenu>
             <TooltipProvider>
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
                   <DropdownMenuTrigger asChild>
-                    <Avatar className="w-8 h-8">
+                    <Avatar className="w-8 h-8 cursor-pointer">
                       <AvatarImage
                         src={
                           session.user.user_metadata?.avatar_url ||
@@ -149,6 +150,11 @@ export function NavBar({
                   {session.user.email}
                 </span>
               </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => router.push('/projects')}>
+                <FolderOpen className="mr-2 h-4 w-4 text-muted-foreground" />
+                My Projects
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => {
@@ -178,7 +184,7 @@ export function NavBar({
             Sign in
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
-        )} */}
+        )}
       </div>
     </nav>
   )
