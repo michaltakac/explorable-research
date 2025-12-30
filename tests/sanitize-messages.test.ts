@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict'
+import { describe, expect, it } from 'vitest'
 import { sanitizeMessagesForStorage, Message } from '../lib/messages'
 import { ExecutionResult } from '../lib/types'
 
@@ -27,17 +27,19 @@ const messages: Message[] = [
   },
 ]
 
-const sanitized = sanitizeMessagesForStorage(messages)
+describe('sanitizeMessagesForStorage', () => {
+  it('replaces file and image payloads with placeholders', () => {
+    const sanitized = sanitizeMessagesForStorage(messages)
 
-assert.equal(sanitized.length, 2)
-assert.equal(sanitized[0].content[0].type, 'text')
-assert.equal(
-  (sanitized[0].content[1] as { type: 'text'; text: string }).text,
-  '[Image uploaded]',
-)
-assert.equal(
-  (sanitized[0].content[2] as { type: 'text'; text: string }).text,
-  '[File uploaded: application/pdf]',
-)
-assert.equal(sanitized[1].content[1].type, 'code')
-assert.equal(sanitized[1].result, sampleResult)
+    expect(sanitized).toHaveLength(2)
+    expect(sanitized[0].content[0].type).toBe('text')
+    expect(
+      (sanitized[0].content[1] as { type: 'text'; text: string }).text,
+    ).toBe('[Image uploaded]')
+    expect(
+      (sanitized[0].content[2] as { type: 'text'; text: string }).text,
+    ).toBe('[File uploaded: application/pdf]')
+    expect(sanitized[1].content[1].type).toBe('code')
+    expect(sanitized[1].result).toBe(sampleResult)
+  })
+})
