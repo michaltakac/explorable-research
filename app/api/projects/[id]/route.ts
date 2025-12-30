@@ -22,11 +22,11 @@ export async function GET(
     const resolvedParams = await params
     const projectId = resolvedParams.id
 
-    const { data, error } = await supabaseClient
+    const { data, error } = await (supabaseClient
       .from('projects')
       .select('*')
-      .eq('id', projectId as any)
-      .single()
+      .eq('id', projectId)
+      .single() as any)
 
     if (error) {
       if (error.code === 'PGRST116') {
@@ -75,12 +75,12 @@ export async function PATCH(
     // Prevent user from changing ownership
     delete (updateData as any).user_id
 
-    const { data, error } = await supabaseClient
+    const { data, error } = await ((supabaseClient as any)
       .from('projects')
-      .update(updateData)
+      .update(updateData as any)
       .eq('id', projectId as any)
       .select()
-      .single()
+      .single() as any)
 
     if (error) {
       if (error.code === 'PGRST116') {
@@ -125,10 +125,10 @@ export async function DELETE(
     const resolvedParams = await params
     const projectId = resolvedParams.id
 
-    const { error } = await supabaseClient
+    const { error } = await (supabaseClient
       .from('projects')
       .delete()
-      .eq('id', projectId as any)
+      .eq('id', projectId) as any)
 
     if (error) {
       if (error.code === 'PGRST116') {

@@ -1,4 +1,4 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import type { Database } from './database.types'
 
@@ -6,7 +6,7 @@ import type { Database } from './database.types'
  * Server-side Supabase client for API routes and server components
  * This client uses cookies to maintain user sessions
  */
-export async function createServerClient(): Promise<SupabaseClient<Database> | null> {
+export async function createServerClient() {
   const cookieStore = await cookies()
 
   if (
@@ -21,9 +21,17 @@ export async function createServerClient(): Promise<SupabaseClient<Database> | n
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY,
     {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+        storage: {
+          getItem: (key: string) => {
+            const cookie = cookieStore.get(key)
+            return cookie?.value ?? null
+          },
+          setItem: () => {},
+          removeItem: () => {},
         },
       },
     },
@@ -102,7 +110,7 @@ export async function getUserDefaultTeam(userId: string) {
     return null
   }
 
-  return data.teams as unknown as {
+  return (data as any).teams as {
     id: string
     name: string
     tier: string

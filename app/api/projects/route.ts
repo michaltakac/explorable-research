@@ -29,11 +29,11 @@ export async function POST(req: Request) {
     }
 
     // Insert project
-    const { data, error } = await supabaseClient
+    const { data, error } = await (supabaseClient
       .from('projects')
-      .insert(projectData)
+      .insert(projectData as any)
       .select()
-      .single()
+      .single() as any)
 
     if (error) {
       console.error('Error creating project:', error)
@@ -73,10 +73,10 @@ export async function GET(req: Request) {
 
     // Get all projects for the authenticated user
     // RLS policies will automatically filter to only user's projects
-    const { data, error } = await supabaseClient
+    const { data, error } = await (supabaseClient
       .from('projects')
       .select('*')
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false }) as any)
 
     if (error) {
       console.error('Error fetching projects:', error)
