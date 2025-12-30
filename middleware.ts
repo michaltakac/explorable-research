@@ -33,17 +33,6 @@ export async function middleware(req: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_URL &&
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY
     ) {
-      // Get auth token from cookies
-      const authCookie = req.cookies.get('sb-access-token')
-      const refreshCookie = req.cookies.get('sb-refresh-token')
-
-      // If no auth cookies, redirect to home
-      if (!authCookie && !refreshCookie) {
-        const redirectUrl = new URL('/', req.url)
-        redirectUrl.searchParams.set('auth', 'required')
-        return NextResponse.redirect(redirectUrl)
-      }
-
       // Create Supabase client to validate session
       const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL,
