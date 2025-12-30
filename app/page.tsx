@@ -10,7 +10,13 @@ import { NavBar } from '@/components/navbar'
 import { Preview } from '@/components/preview'
 import { Header, Hero, Features, HowItWorks, CTASection, Footer } from '@/components/landing'
 import { useAuth } from '@/lib/auth'
-import { Message, toAISDKMessages, toMessageImage, toMessageFile } from '@/lib/messages'
+import {
+  Message,
+  sanitizeMessagesForStorage,
+  toAISDKMessages,
+  toMessageImage,
+  toMessageFile,
+} from '@/lib/messages'
 import { LLMModelConfig } from '@/lib/models'
 import modelsList from '@/lib/models.json'
 import { FragmentSchema, fragmentSchema as schema } from '@/lib/schema'
@@ -42,6 +48,7 @@ export default function Home() {
 
   const [result, setResult] = useState<ExecutionResult>()
   const [messages, setMessages] = useState<Message[]>([])
+  const messagesRef = useRef<Message[]>([])
   const [fragment, setFragment] = useState<DeepPartial<FragmentSchema>>()
   const [currentTab, setCurrentTab] = useState<'code' | 'fragment'>('code')
   const [isPreviewLoading, setIsPreviewLoading] = useState(false)
@@ -57,6 +64,56 @@ export default function Home() {
   )
 
   const chatSectionRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    messagesRef.current = messages
+  }, [messages])
+
+  async function saveProject({
+    fragment,
+    result,
+  }: {
+    fragment: DeepPartial<FragmentSchema> | undefined
+    result: ExecutionResult | undefined
+  }) {
+    if (!session?.access_token || !fragment || !result) {
+      return
+    }
+
+    const sanitizedMessages = sanitizeMessagesForStorage(
+      messagesRef.current ?? [],
+    )
+    const updatedMessages = sanitizedMessages.map((message, index) => {
+      if (
+        index === sanitizedMessages.length - 1 &&
+        message.role === 'assistant'
+      ) {
+        return { ...message, object: fragment, result }
+      }
+      return message
+    })
+
+    try {
+      const response = await fetch('/api/projects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          fragment,
+          result,
+          messages: updatedMessages,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to save project')
+      }
+    } catch {
+      console.error('Failed to save project')
+    }
+  }
 
   const filteredModels = modelsList.models.filter((model) => {
     if (process.env.NEXT_PUBLIC_HIDE_LOCAL_MODELS) {
@@ -106,7 +163,6 @@ export default function Home() {
     onFinish: async ({ object: fragment, error }) => {
       if (!error) {
         // send it to /api/sandbox
-        console.log('fragment', fragment)
         setIsPreviewLoading(true)
         posthog.capture('fragment_generated', {
           template: fragment?.template,
@@ -123,7 +179,6 @@ export default function Home() {
         })
 
         const result = await response.json()
-        console.log('result', result)
         posthog.capture('sandbox_created', { url: result.url })
 
         setResult(result)
@@ -131,6 +186,7 @@ export default function Home() {
         setMessage({ result })
         setCurrentTab('fragment')
         setIsPreviewLoading(false)
+        await saveProject({ fragment, result })
       }
     },
   })
@@ -266,9 +322,9 @@ export default function Home() {
   }
 
   function logout() {
-    supabase
-      ? supabase.auth.signOut()
-      : console.warn('Supabase is not initialized')
+    if (supabase) {
+      supabase.auth.signOut()
+    }
   }
 
   function handleLanguageModelChange(e: LLMModelConfig) {

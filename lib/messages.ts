@@ -83,3 +83,23 @@ export async function toMessageFile(files: File[]): Promise<MessageFile[]> {
     }),
   )
 }
+
+export function sanitizeMessagesForStorage(messages: Message[]): Message[] {
+  return messages.map((message) => ({
+    ...message,
+    content: message.content.flatMap((content) => {
+      if (content.type === 'file') {
+        const label = content.mimeType
+          ? `[File uploaded: ${content.mimeType}]`
+          : '[File uploaded]'
+        return [{ type: 'text', text: label }]
+      }
+
+      if (content.type === 'image') {
+        return [{ type: 'text', text: '[Image uploaded]' }]
+      }
+
+      return [content]
+    }),
+  }))
+}

@@ -9,18 +9,31 @@ import {
 } from '@/components/ui/dialog'
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import { SupabaseClient } from '@supabase/supabase-js'
+import { useEffect, useState } from 'react'
 
 export function AuthDialog({
   open,
   setOpen,
   supabase,
   view,
+  redirectTo,
 }: {
   open: boolean
   setOpen: (open: boolean) => void
   supabase: SupabaseClient
   view: ViewType
+  redirectTo?: string
 }) {
+  const [resolvedRedirect, setResolvedRedirect] = useState<string | undefined>(
+    redirectTo,
+  )
+
+  useEffect(() => {
+    if (!redirectTo) {
+      setResolvedRedirect(window.location.href)
+    }
+  }, [redirectTo])
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent>
@@ -43,6 +56,7 @@ export function AuthDialog({
               view={view}
               providers={['github', 'google']}
               socialLayout="horizontal"
+              redirectTo={resolvedRedirect}
               onSignUpValidate={validateEmail}
               metadata={{
                 is_fragments_user: true,
