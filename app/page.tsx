@@ -581,7 +581,7 @@ export default function Home() {
         />
       )}
       
-      <Header onGetStarted={handleGetStarted} />
+      <Header onGetStarted={handleGetStarted} session={session} signOut={logout} />
       
       <Hero onGetStarted={handleGetStarted} />
       

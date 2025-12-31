@@ -23,7 +23,7 @@ import {
 } from '@radix-ui/react-icons'
 import { Session } from '@supabase/supabase-js'
 import { track } from '@vercel/analytics'
-import { ArrowRight, LogOut, Trash, Undo } from 'lucide-react'
+import { ArrowRight, BookImage, CircleUser, LogOut, Trash, Undo } from 'lucide-react'
 import Link from 'next/link'
 
 export function NavBar({
@@ -156,15 +156,16 @@ export function NavBar({
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href="/projects">Projects</Link>
+                <Link href="/profile">
+                  <CircleUser className="mr-2 h-4 w-4 text-muted-foreground" />
+                  Profile
+                </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  window.open('https://github.com/michaltakac/explorable-research', '_blank')
-                }}
-              >
-                <Logo className="mr-2 h-4 w-4 text-muted-foreground" />
-                About Explorable Research
+              <DropdownMenuItem asChild>
+                <Link href="/projects">
+                  <BookImage className="mr-2 h-4 w-4 text-muted-foreground" />
+                  Projects
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onSocialClick('github')}>
                 <GitHubLogoIcon className="mr-2 h-4 w-4 text-muted-foreground" />
