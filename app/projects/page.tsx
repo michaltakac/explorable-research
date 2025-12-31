@@ -11,9 +11,19 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { useToast } from '@/components/ui/use-toast'
 import { useAuth } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import { ExecutionResult } from '@/lib/types'
+import { Loader2, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
@@ -45,7 +55,11 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<ProjectSummary[]>(emptyProjects)
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [projectToDelete, setProjectToDelete] = useState<ProjectSummary | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
   const { session } = useAuth(setAuthDialog, setAuthView)
+  const { toast } = useToast()
 
   useEffect(() => {
     let isMounted = true
@@ -111,6 +125,47 @@ export default function ProjectsPage() {
     }
   }
 
+  function openDeleteDialog(project: ProjectSummary) {
+    setProjectToDelete(project)
+    setDeleteDialogOpen(true)
+  }
+
+  async function handleDeleteProject() {
+    if (!projectToDelete || !session?.access_token) return
+
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/projects/${projectToDelete.id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete project')
+      }
+
+      // Remove the project from the list
+      setProjects((prev) => prev.filter((p) => p.id !== projectToDelete.id))
+      
+      toast({
+        title: 'Project deleted',
+        description: 'The project and its sandbox have been deleted.',
+      })
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete the project. Please try again.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsDeleting(false)
+      setDeleteDialogOpen(false)
+      setProjectToDelete(null)
+    }
+  }
+
   return (
     <main className="min-h-screen bg-background">
       {supabase && (
@@ -121,6 +176,37 @@ export default function ProjectsPage() {
           supabase={supabase}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete project?</DialogTitle>
+            <DialogDescription>
+              This will permanently delete &quot;{projectToDelete?.title || 'Untitled project'}&quot; 
+              and terminate its sandbox. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteProject}
+              disabled={isDeleting}
+            >
+              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="max-w-5xl mx-auto px-4 py-6">
         <NavBar
           session={session}
@@ -204,13 +290,25 @@ export default function ProjectsPage() {
                   return (
                     <Card key={project.id}>
                       <CardHeader>
-                        <CardTitle>
-                          {project.title || 'Untitled project'}
-                        </CardTitle>
-                        <CardDescription>
-                          {project.description || 'No description'} ·{' '}
-                          {formatDate(project.created_at)}
-                        </CardDescription>
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <CardTitle>
+                              {project.title || 'Untitled project'}
+                            </CardTitle>
+                            <CardDescription>
+                              {project.description || 'No description'} ·{' '}
+                              {formatDate(project.created_at)}
+                            </CardDescription>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-muted-foreground hover:text-destructive"
+                            onClick={() => openDeleteDialog(project)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </CardHeader>
                       <CardContent className="flex flex-wrap gap-2">
                         <Button asChild variant="default">
