@@ -81,8 +81,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <PostHogProvider>
-        <body className={inter.className}>
+      <body className={inter.className}>
+        <PostHogProvider>
           <ThemeProvider
             attribute="class"
             defaultTheme="light"
@@ -93,8 +93,8 @@ export default function RootLayout({
           </ThemeProvider>
           <Toaster />
           <Analytics />
-        </body>
-      </PostHogProvider>
+        </PostHogProvider>
+      </body>
     </html>
   )
 }

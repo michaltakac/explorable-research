@@ -4,12 +4,9 @@ import { Button } from '@/components/ui/button'
 import { track } from '@vercel/analytics'
 import { ArrowRight } from 'lucide-react'
 import { motion } from 'framer-motion'
+import Link from 'next/link'
 
-interface CTASectionProps {
-  onGetStarted: () => void
-}
-
-export function CTASection({ onGetStarted }: CTASectionProps) {
+export function CTASection() {
   return (
     <section className="py-24 relative overflow-hidden">
       {/* Background */}
@@ -52,14 +49,16 @@ export function CTASection({ onGetStarted }: CTASectionProps) {
         >
           <Button 
             size="lg"
-            onClick={() => {
-              track('Start Creating Click', { location: 'cta-section' })
-              onGetStarted()
-            }}
+            asChild
             className="bg-white text-violet-700 hover:bg-white/90 shadow-xl h-14 px-8 text-lg font-semibold"
           >
-            Start Creating — It&apos;s Free
-            <ArrowRight className="ml-2 h-5 w-5" />
+            <Link 
+              href="/create"
+              onClick={() => track('Start Creating Click', { location: 'cta-section' })}
+            >
+              Start Creating — It&apos;s Free
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Link>
           </Button>
         </motion.div>
 

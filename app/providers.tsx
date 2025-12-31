@@ -16,11 +16,9 @@ if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_ENABLE_POSTHOG) {
 }
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
-  return process.env.NEXT_PUBLIC_ENABLE_POSTHOG ? (
-    <PostHogProviderJS client={posthog}>{children}</PostHogProviderJS>
-  ) : (
-    children
-  )
+  // Always wrap with PostHogProviderJS to ensure usePostHog hook has context
+  // When PostHog is not enabled, the client will be in a "disabled" state
+  return <PostHogProviderJS client={posthog}>{children}</PostHogProviderJS>
 }
 
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {

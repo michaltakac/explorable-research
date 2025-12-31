@@ -142,7 +142,7 @@ export default function ProjectsPage() {
             </p>
           </div>
           <Button asChild variant="outline">
-            <Link href="/">New project</Link>
+            <Link href="/create">New project</Link>
           </Button>
         </div>
 
@@ -189,7 +189,7 @@ export default function ProjectsPage() {
                 </CardHeader>
                 <CardContent>
                   <Button asChild>
-                    <Link href="/">Create a project</Link>
+                    <Link href="/create">Create a project</Link>
                   </Button>
                 </CardContent>
               </Card>

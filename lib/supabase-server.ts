@@ -1,10 +1,16 @@
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY
+const supabaseKey =
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const enableSupabase = process.env.NEXT_PUBLIC_ENABLE_SUPABASE
+const isSupabaseEnabled = enableSupabase
+  ? !['false', '0', 'off'].includes(enableSupabase.toLowerCase())
+  : true
 
 export function createSupabaseServerClient(accessToken?: string) {
-  if (!supabaseUrl || !supabaseKey) {
+  if (!isSupabaseEnabled || !supabaseUrl || !supabaseKey) {
     throw new Error('Supabase environment variables are missing')
   }
 

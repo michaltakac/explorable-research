@@ -1,19 +1,39 @@
 'use client'
 
 import Logo from '../logo'
+import { Avatar, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
-import { GitHubLogoIcon } from '@radix-ui/react-icons'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import {
+  GitHubLogoIcon,
+  TwitterLogoIcon,
+} from '@radix-ui/react-icons'
+import { Session } from '@supabase/supabase-js'
 import { track } from '@vercel/analytics'
-import { ArrowRight, Menu, X } from 'lucide-react'
+import { ArrowRight, BookImage, CircleUser, LogOut, Menu, X } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 
 interface HeaderProps {
-  onGetStarted?: () => void
+  session?: Session | null
+  signOut?: () => void
 }
 
-export function Header({ onGetStarted }: HeaderProps) {
+export function Header({ session, signOut }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
@@ -61,16 +81,85 @@ export function Header({ onGetStarted }: HeaderProps) {
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-3">
             <ThemeToggle />
-            <Button 
-              onClick={() => {
-                track('Get Started Click', { location: 'header' })
-                onGetStarted?.()
-              }}
-              className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-lg shadow-violet-500/25 border-0"
-            >
-              Get Started
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+            {session ? (
+              <>
+                <Button variant="ghost" asChild>
+                  <Link href="/projects">Projects</Link>
+                </Button>
+                <DropdownMenu>
+                  <TooltipProvider>
+                    <Tooltip delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        <DropdownMenuTrigger asChild>
+                          <Avatar className="w-8 h-8 cursor-pointer">
+                            <AvatarImage
+                              src={
+                                session.user.user_metadata?.avatar_url ||
+                                'https://avatar.vercel.sh/' + session.user.email
+                              }
+                              alt={session.user.email}
+                            />
+                          </Avatar>
+                        </DropdownMenuTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent>My Account</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <DropdownMenuContent className="w-56" align="end">
+                    <DropdownMenuLabel className="flex flex-col">
+                      <span className="text-sm">My Account</span>
+                      <span className="text-xs text-muted-foreground">
+                        {session.user.email || 'Signed in'}
+                      </span>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/profile">
+                        <CircleUser className="mr-2 h-4 w-4 text-muted-foreground" />
+                        Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/projects">
+                        <BookImage className="mr-2 h-4 w-4 text-muted-foreground" />
+                        Projects
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => {
+                        track('Star on GitHub Click', { location: 'header-dropdown' })
+                        window.open('https://github.com/michaltakac/explorable-research', '_blank')
+                      }}
+                    >
+                      <GitHubLogoIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                      Star on GitHub
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => window.open('https://x.com/michaltakac', '_blank')}>
+                      <TwitterLogoIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                      Follow @michaltakac on X
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={signOut}>
+                      <LogOut className="mr-2 h-4 w-4 text-muted-foreground" />
+                      Sign out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : (
+              <Button 
+                asChild
+                className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-lg shadow-violet-500/25 border-0"
+              >
+                <Link 
+                  href="/create"
+                  onClick={() => track('Get Started Click', { location: 'header' })}
+                >
+                  Get Started
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -119,16 +208,55 @@ export function Header({ onGetStarted }: HeaderProps) {
                 GitHub
               </a>
               <div className="flex flex-col gap-2 pt-4 border-t border-border/50">
-                <Button 
-                  onClick={() => {
-                    track('Get Started Click', { location: 'header-mobile' })
-                    onGetStarted?.()
-                  }}
-                  className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white"
-                >
-                  Get Started
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
+                {session ? (
+                  <>
+                    <Link 
+                      href="/projects"
+                      className="text-sm font-medium text-foreground hover:text-foreground/80 transition-colors"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Projects
+                    </Link>
+                    <div className="flex items-center gap-2 py-2">
+                      <Avatar className="w-6 h-6">
+                        <AvatarImage
+                          src={
+                            session.user.user_metadata?.avatar_url ||
+                            'https://avatar.vercel.sh/' + session.user.email
+                          }
+                          alt={session.user.email}
+                        />
+                      </Avatar>
+                      <span className="text-sm text-muted-foreground truncate">
+                        {session.user.email}
+                      </span>
+                    </div>
+                    <Button 
+                      variant="outline"
+                      onClick={() => {
+                        signOut?.()
+                        setMobileMenuOpen(false)
+                      }}
+                      className="w-full"
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign out
+                    </Button>
+                  </>
+                ) : (
+                  <Button 
+                    asChild
+                    className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white"
+                  >
+                    <Link 
+                      href="/create"
+                      onClick={() => track('Get Started Click', { location: 'header-mobile' })}
+                    >
+                      Get Started
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                )}
               </div>
             </nav>
           </div>
