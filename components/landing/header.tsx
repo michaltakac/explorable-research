@@ -29,12 +29,11 @@ import Link from 'next/link'
 import { useState } from 'react'
 
 interface HeaderProps {
-  onGetStarted?: () => void
   session?: Session | null
   signOut?: () => void
 }
 
-export function Header({ onGetStarted, session, signOut }: HeaderProps) {
+export function Header({ session, signOut }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
@@ -149,14 +148,16 @@ export function Header({ onGetStarted, session, signOut }: HeaderProps) {
               </>
             ) : (
               <Button 
-                onClick={() => {
-                  track('Get Started Click', { location: 'header' })
-                  onGetStarted?.()
-                }}
+                asChild
                 className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-lg shadow-violet-500/25 border-0"
               >
-                Get Started
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <Link 
+                  href="/create"
+                  onClick={() => track('Get Started Click', { location: 'header' })}
+                >
+                  Get Started
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
               </Button>
             )}
           </div>
@@ -244,14 +245,16 @@ export function Header({ onGetStarted, session, signOut }: HeaderProps) {
                   </>
                 ) : (
                   <Button 
-                    onClick={() => {
-                      track('Get Started Click', { location: 'header-mobile' })
-                      onGetStarted?.()
-                    }}
+                    asChild
                     className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white"
                   >
-                    Get Started
-                    <ArrowRight className="ml-2 h-4 w-4" />
+                    <Link 
+                      href="/create"
+                      onClick={() => track('Get Started Click', { location: 'header-mobile' })}
+                    >
+                      Get Started
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
                   </Button>
                 )}
               </div>

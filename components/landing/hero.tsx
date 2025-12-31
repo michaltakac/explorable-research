@@ -4,12 +4,9 @@ import { Button } from '@/components/ui/button'
 import { track } from '@vercel/analytics'
 import { ArrowRight, FileText, Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
+import Link from 'next/link'
 
-interface HeroProps {
-  onGetStarted: () => void
-}
-
-export function Hero({ onGetStarted }: HeroProps) {
+export function Hero() {
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center pt-16 overflow-hidden">
       {/* Background gradient */}
@@ -65,14 +62,16 @@ export function Hero({ onGetStarted }: HeroProps) {
           >
             <Button 
               size="lg"
-              onClick={() => {
-                track('Start Creating Click', { location: 'hero' })
-                onGetStarted()
-              }}
+              asChild
               className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-xl shadow-violet-500/25 border-0 h-14 px-8 text-lg"
             >
-              Start Creating
-              <ArrowRight className="ml-2 h-5 w-5" />
+              <Link 
+                href="/create"
+                onClick={() => track('Start Creating Click', { location: 'hero' })}
+              >
+                Start Creating
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
             </Button>
             <Button 
               variant="outline" 
@@ -100,16 +99,16 @@ export function Hero({ onGetStarted }: HeroProps) {
               'Explain the attention mechanism in transformers',
               'Interactive Conway\'s Game of Life simulation',
             ].map((prompt, index) => (
-              <button
+              <Link
                 key={index}
-                onClick={onGetStarted}
+                href="/create"
                 className="group flex items-start gap-3 p-4 rounded-xl bg-card border border-border/50 hover:border-violet-300 dark:hover:border-violet-700 hover:shadow-lg transition-all text-left"
               >
                 <FileText className="w-5 h-5 text-violet-500 mt-0.5 flex-shrink-0" />
                 <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
                   {prompt}
                 </span>
-              </button>
+              </Link>
             ))}
           </motion.div>
         </div>

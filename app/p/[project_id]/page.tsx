@@ -51,7 +51,7 @@ export default function ProjectDetailPage() {
   const [currentResult, setCurrentResult] = useState<ExecutionResult | undefined>(
     undefined,
   )
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
   const { session, userTeam } = useAuth(setAuthDialog, setAuthView)
 
@@ -133,45 +133,64 @@ export default function ProjectDetailPage() {
     setCurrentResult(preview.result)
   }
 
-  return (
-    <main className="min-h-screen bg-background">
-      {supabase && (
-        <AuthDialog
-          open={isAuthDialogOpen}
-          setOpen={setAuthDialog}
-          view={authView}
-          supabase={supabase}
-        />
-      )}
-      <div className="max-w-6xl mx-auto px-4 py-6">
-        <NavBar
-          session={session}
-          showLogin={() => setAuthDialog(true)}
-          signOut={logout}
-          onSocialClick={handleSocialClick}
-          onClear={() => undefined}
-          canClear={false}
-          onUndo={() => undefined}
-          canUndo={false}
-          showGitHubStar={false}
-        />
-
-        <div className="mt-6 flex items-center justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground">Project</p>
-            <h2 className="text-2xl font-semibold">
-              {project?.title || 'Project session'}
-            </h2>
-            {project?.description && (
-              <p className="text-muted-foreground">{project.description}</p>
-            )}
-          </div>
-          <Button asChild variant="outline">
-            <Link href="/projects">Back to projects</Link>
-          </Button>
+  // Show loading state
+  if (isLoading) {
+    return (
+      <main className="min-h-screen bg-background">
+        {supabase && (
+          <AuthDialog
+            open={isAuthDialogOpen}
+            setOpen={setAuthDialog}
+            view={authView}
+            supabase={supabase}
+          />
+        )}
+        <div className="max-w-2xl mx-auto px-4 py-6">
+          <NavBar
+            session={session}
+            showLogin={() => setAuthDialog(true)}
+            signOut={logout}
+            onSocialClick={handleSocialClick}
+            onClear={() => undefined}
+            canClear={false}
+            onUndo={() => undefined}
+            canUndo={false}
+            showGitHubStar={false}
+          />
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Loading session...</CardTitle>
+            </CardHeader>
+          </Card>
         </div>
+      </main>
+    )
+  }
 
-        {!session && (
+  // Show sign in prompt if not authenticated
+  if (!session) {
+    return (
+      <main className="min-h-screen bg-background">
+        {supabase && (
+          <AuthDialog
+            open={isAuthDialogOpen}
+            setOpen={setAuthDialog}
+            view={authView}
+            supabase={supabase}
+          />
+        )}
+        <div className="max-w-2xl mx-auto px-4 py-6">
+          <NavBar
+            session={session}
+            showLogin={() => setAuthDialog(true)}
+            signOut={logout}
+            onSocialClick={handleSocialClick}
+            onClear={() => undefined}
+            canClear={false}
+            onUndo={() => undefined}
+            canUndo={false}
+            showGitHubStar={false}
+          />
           <Card className="mt-6">
             <CardHeader>
               <CardTitle>Sign in to view this session</CardTitle>
@@ -183,61 +202,94 @@ export default function ProjectDetailPage() {
               <Button onClick={() => setAuthDialog(true)}>Sign in</Button>
             </CardContent>
           </Card>
+        </div>
+      </main>
+    )
+  }
+
+  // Show error state
+  if (errorMessage) {
+    return (
+      <main className="min-h-screen bg-background">
+        {supabase && (
+          <AuthDialog
+            open={isAuthDialogOpen}
+            setOpen={setAuthDialog}
+            view={authView}
+            supabase={supabase}
+          />
         )}
+        <div className="max-w-2xl mx-auto px-4 py-6">
+          <NavBar
+            session={session}
+            showLogin={() => setAuthDialog(true)}
+            signOut={logout}
+            onSocialClick={handleSocialClick}
+            onClear={() => undefined}
+            canClear={false}
+            onUndo={() => undefined}
+            canUndo={false}
+            showGitHubStar={false}
+          />
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Unable to load session</CardTitle>
+              <CardDescription>{errorMessage}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild variant="outline">
+                <Link href="/projects">Back to projects</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+    )
+  }
 
-        {session && (
-          <div className="mt-6">
-            {isLoading && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Loading session...</CardTitle>
-                </CardHeader>
-              </Card>
-            )}
-
-            {!isLoading && errorMessage && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Unable to load session</CardTitle>
-                  <CardDescription>{errorMessage}</CardDescription>
-                </CardHeader>
-              </Card>
-            )}
-
-            {!isLoading && !errorMessage && project && (
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Session chat</CardTitle>
-                      <CardDescription>
-                        The conversation that produced this explorable.
-                      </CardDescription>
-                    </CardHeader>
-                  </Card>
-                  <Chat
-                    messages={messages}
-                    isLoading={false}
-                    setCurrentPreview={setCurrentPreview}
-                  />
-                </div>
-                <div className="relative min-h-[600px]">
-                  <Preview
-                    teamID={userTeam?.id}
-                    accessToken={session?.access_token}
-                    selectedTab={currentTab}
-                    onSelectedTabChange={setCurrentTab}
-                    isChatLoading={false}
-                    isPreviewLoading={false}
-                    fragment={currentFragment}
-                    result={currentResult}
-                    onClose={() => setCurrentFragment(undefined)}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+  // Show project view (same layout as /create when fragment is shown)
+  return (
+    <main className="flex min-h-screen max-h-screen">
+      {supabase && (
+        <AuthDialog
+          open={isAuthDialogOpen}
+          setOpen={setAuthDialog}
+          view={authView}
+          supabase={supabase}
+        />
+      )}
+      <div className="grid w-full md:grid-cols-2">
+        <div
+          className={`flex flex-col w-full max-h-full max-w-[800px] mx-auto px-4 overflow-auto ${currentFragment ? 'col-span-1' : 'col-span-2'}`}
+        >
+          <NavBar
+            session={session}
+            showLogin={() => setAuthDialog(true)}
+            signOut={logout}
+            onSocialClick={handleSocialClick}
+            onClear={() => undefined}
+            canClear={false}
+            onUndo={() => undefined}
+            canUndo={false}
+            showGitHubStar={true}
+          />
+          <Chat
+            messages={messages}
+            isLoading={false}
+            setCurrentPreview={setCurrentPreview}
+          />
+        </div>
+        <Preview
+          teamID={userTeam?.id}
+          accessToken={session?.access_token}
+          selectedTab={currentTab}
+          onSelectedTabChange={setCurrentTab}
+          isChatLoading={false}
+          isPreviewLoading={false}
+          fragment={currentFragment}
+          result={currentResult}
+          onClose={() => setCurrentFragment(undefined)}
+        />
       </div>
     </main>
   )
