@@ -4,6 +4,8 @@ import { getModelClient, LLMModel, LLMModelConfig } from '@/lib/models'
 import { applyPatch } from '@/lib/morph'
 import ratelimit from '@/lib/ratelimit'
 import { FragmentSchema, morphEditSchema, MorphEditSchema } from '@/lib/schema'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { downloadPdfFromStorage } from '@/lib/pdf-storage'
 import { generateObject, CoreMessage } from 'ai'
 
 export const maxDuration = 300
@@ -15,6 +17,76 @@ const ratelimitWindow = process.env.RATE_LIMIT_WINDOW
   ? (process.env.RATE_LIMIT_WINDOW as Duration)
   : '1d'
 
+type StorageFileContent = {
+  type: 'storage-file'
+  storagePath: string
+  mimeType: string
+  filename: string
+  size: number
+}
+
+/**
+ * Resolve storage files in messages by downloading from Supabase Storage
+ */
+async function resolveStorageFiles(
+  messages: CoreMessage[],
+  accessToken?: string
+): Promise<CoreMessage[]> {
+  if (!accessToken) {
+    return messages
+  }
+
+  let supabase
+  try {
+    supabase = createSupabaseServerClient(accessToken)
+  } catch {
+    return messages
+  }
+
+  const resolvedMessages: CoreMessage[] = []
+
+  for (const message of messages) {
+    if (!Array.isArray(message.content)) {
+      resolvedMessages.push(message)
+      continue
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const resolvedContent: any[] = []
+
+    for (const content of message.content) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const contentAny = content as any
+      if (contentAny.type === 'storage-file') {
+        const storageFile = contentAny as StorageFileContent
+        const downloaded = await downloadPdfFromStorage(supabase, storageFile.storagePath)
+
+        if (downloaded) {
+          resolvedContent.push({
+            type: 'file',
+            data: downloaded.data,
+            mimeType: downloaded.mimeType,
+          })
+        } else {
+          resolvedContent.push({
+            type: 'text',
+            text: `[PDF: ${storageFile.filename} - failed to load]`,
+          })
+        }
+      } else {
+        resolvedContent.push(content)
+      }
+    }
+
+    resolvedMessages.push({
+      ...message,
+      content: resolvedContent,
+    } as CoreMessage)
+  }
+
+  return resolvedMessages
+}
+
 // System prompt is constructed dynamically below using the current file context
 
 export async function POST(req: Request) {
@@ -23,11 +95,13 @@ export async function POST(req: Request) {
     model,
     config,
     currentFragment,
+    accessToken,
   }: {
     messages: CoreMessage[]
     model: LLMModel
     config: LLMModelConfig
     currentFragment: FragmentSchema
+    accessToken?: string
   } = await req.json()
 
   // Rate limiting (same as chat route)
@@ -42,6 +116,9 @@ export async function POST(req: Request) {
   if (limit) {
     return createRateLimitResponse(limit)
   }
+
+  // Resolve storage files before processing
+  const resolvedMessages = await resolveStorageFiles(messages, accessToken)
 
   const { model: modelNameString, apiKey: modelApiKey, ...modelParams } = config
   const modelClient = getModelClient(model, config)
@@ -67,7 +144,7 @@ ${currentFragment.code}
     const result = await generateObject({
       model: modelClient,
       system: contextualSystemPrompt,
-      messages,
+      messages: resolvedMessages,
       schema: morphEditSchema,
       maxRetries: 0,
       ...modelParams,

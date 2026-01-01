@@ -15,17 +15,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { isFileInArray } from '@/lib/utils'
+import { MAX_PDF_SIZE, MAX_PDF_COUNT, MAX_IMAGE_SIZE, MAX_IMAGE_COUNT, formatFileSize } from '@/lib/pdf-storage'
 import { ArrowUp, FileText, ImageIcon, Paperclip, Square, X } from 'lucide-react'
 import { SetStateAction, useEffect, useMemo, useState } from 'react'
 import TextareaAutosize from 'react-textarea-autosize'
-
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
-}
 
 function truncateFileName(name: string, maxLength: number = 20): string {
   if (name.length <= maxLength) return name
@@ -34,12 +27,6 @@ function truncateFileName(name: string, maxLength: number = 20): string {
   const truncatedBase = baseName.slice(0, maxLength - extension.length - 4) + '...'
   return `${truncatedBase}.${extension}`
 }
-
-// File limits
-const MAX_PDF_SIZE = 3.3 * 1024 * 1024 // 3.3MB (Vercel has 4.5MB limit; base64 encoding adds ~33% overhead)
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024 // 5MB
-const MAX_PDF_COUNT = 4
-const MAX_IMAGE_COUNT = 8
 
 export function ChatInput({
   retry,

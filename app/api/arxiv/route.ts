@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createSupabaseServerClient, getAccessToken } from '@/lib/supabase-server'
+import { uploadPdfToStorage, MAX_PDF_SIZE, formatFileSize } from '@/lib/pdf-storage'
 
 export const maxDuration = 60
+
+// Legacy limit for unauthenticated users (base64 in response body)
+const LEGACY_MAX_PDF_SIZE = 3.3 * 1024 * 1024
 
 // Extract ArXiv ID from various URL formats
 function extractArxivId(input: string): string | null {
@@ -53,6 +58,23 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Check if user is authenticated for storage upload
+    const accessToken = getAccessToken(req)
+    let supabase = null
+    let userId: string | null = null
+
+    if (accessToken) {
+      try {
+        supabase = createSupabaseServerClient(accessToken)
+        const { data: userData } = await supabase.auth.getUser(accessToken)
+        if (userData?.user) {
+          userId = userData.user.id
+        }
+      } catch {
+        // Supabase not configured or auth failed, continue without storage
+      }
+    }
+
     // Construct PDF URL
     const pdfUrl = `https://arxiv.org/pdf/${arxivId}.pdf`
 
@@ -74,18 +96,21 @@ export async function POST(req: NextRequest) {
     }
 
     const pdfBuffer = await response.arrayBuffer()
-    const base64 = Buffer.from(pdfBuffer).toString('base64')
+    const filename = `${arxivId.replace('/', '-')}.pdf`
 
-    // Check size (3.3MB limit for Vercel)
+    // Determine max size based on authentication status
+    const maxSize = userId && supabase ? MAX_PDF_SIZE : LEGACY_MAX_PDF_SIZE
     const sizeInMB = pdfBuffer.byteLength / (1024 * 1024)
-    if (sizeInMB > 3.3) {
+
+    if (pdfBuffer.byteLength > maxSize) {
+      const maxSizeMB = (maxSize / (1024 * 1024)).toFixed(1)
       return NextResponse.json(
-        { error: `PDF is too large (${sizeInMB.toFixed(1)}MB). Maximum size is 3.3MB.` },
+        { error: `PDF is too large (${sizeInMB.toFixed(1)}MB). Maximum size is ${maxSizeMB}MB.` },
         { status: 413 }
       )
     }
 
-    // Also fetch metadata from the abstract page
+    // Fetch metadata from the abstract page
     let title = `arXiv:${arxivId}`
     let abstract = ''
 
@@ -117,6 +142,35 @@ export async function POST(req: NextRequest) {
       console.warn('Failed to fetch ArXiv metadata')
     }
 
+    // If authenticated, upload to Supabase Storage
+    if (userId && supabase) {
+      const uploadResult = await uploadPdfToStorage(supabase, userId, {
+        data: new Uint8Array(pdfBuffer),
+        filename,
+        mimeType: 'application/pdf',
+      })
+
+      if (uploadResult.success) {
+        return NextResponse.json({
+          success: true,
+          arxivId,
+          title,
+          abstract,
+          pdf: {
+            storagePath: uploadResult.storagePath,
+            mimeType: 'application/pdf',
+            size: pdfBuffer.byteLength,
+            filename,
+          },
+        })
+      }
+      // If upload failed, fall back to base64
+      console.warn('Storage upload failed, falling back to base64:', uploadResult.error)
+    }
+
+    // Return base64 for unauthenticated users or if storage upload failed
+    const base64 = Buffer.from(pdfBuffer).toString('base64')
+
     return NextResponse.json({
       success: true,
       arxivId,
@@ -126,7 +180,7 @@ export async function POST(req: NextRequest) {
         data: base64,
         mimeType: 'application/pdf',
         size: pdfBuffer.byteLength,
-        filename: `${arxivId.replace('/', '-')}.pdf`,
+        filename,
       },
     })
   } catch (error) {
