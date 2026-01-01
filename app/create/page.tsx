@@ -5,7 +5,7 @@ import { AuthDialog } from '@/components/auth-dialog'
 import { Chat } from '@/components/chat'
 import { ChatInput } from '@/components/chat-input'
 import { ChatPicker } from '@/components/chat-picker'
-import { CreatorInput } from '@/components/creator-input'
+import { CreatorInput, ArxivPaper } from '@/components/creator-input'
 import { NavBar } from '@/components/navbar'
 import { Preview } from '@/components/preview'
 import { useAuth } from '@/lib/auth'
@@ -34,6 +34,7 @@ export default function CreatePage() {
   const [chatInput, setChatInput] = useLocalStorage('chat', '')
   const [files, setFiles] = useState<File[]>([])
   const [pdfFiles, setPdfFiles] = useState<File[]>([])
+  const [arxivPapers, setArxivPapers] = useState<ArxivPaper[]>([])
   const [selectedTemplate, setSelectedTemplate] = useState<string>(
     getTemplateIdSuffix('explorable-research-developer'),
   )
@@ -265,6 +266,17 @@ export default function CreatePage() {
       })
     }
 
+    // Add ArXiv papers as file content
+    if (arxivPapers.length > 0) {
+      arxivPapers.forEach((paper) => {
+        content.push({
+          type: 'file',
+          data: paper.pdf.data,
+          mimeType: paper.pdf.mimeType,
+        })
+      })
+    }
+
     const updatedMessages = addMessage({
       role: 'user',
       content,
@@ -283,6 +295,7 @@ export default function CreatePage() {
     setChatInput('')
     setFiles([])
     setPdfFiles([])
+    setArxivPapers([])
     setCurrentTab('code')
 
     posthog.capture('chat_submit', {
@@ -320,6 +333,10 @@ export default function CreatePage() {
     setPdfFiles(change)
   }
 
+  function handleArxivPapersChange(change: SetStateAction<ArxivPaper[]>) {
+    setArxivPapers(change)
+  }
+
   function logout() {
     if (supabase) {
       supabase.auth.signOut()
@@ -347,6 +364,7 @@ export default function CreatePage() {
     setChatInput('')
     setFiles([])
     setPdfFiles([])
+    setArxivPapers([])
     setMessages([])
     setFragment(undefined)
     setResult(undefined)
@@ -513,6 +531,8 @@ export default function CreatePage() {
             handleFileChange={handleFileChange}
             pdfFiles={pdfFiles}
             handlePdfFileChange={handlePdfFileChange}
+            arxivPapers={arxivPapers}
+            handleArxivPapersChange={handleArxivPapersChange}
             selectedModel={languageModel.model || ''}
           >
             <ChatPicker
