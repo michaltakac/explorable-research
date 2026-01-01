@@ -9,9 +9,21 @@ import {
 } from '@/components/ui/tooltip'
 import { isFileInArray } from '@/lib/utils'
 import { track } from '@vercel/analytics'
-import { ArrowRight, FileText, ImageIcon, Upload, Square, X, ChevronDown, ChevronUp, Loader2, Sparkles } from 'lucide-react'
+import { ArrowRight, FileText, ImageIcon, Upload, Square, X, ChevronDown, ChevronUp, Loader2, Sparkles, Link2, ExternalLink } from 'lucide-react'
 import { SetStateAction, useEffect, useMemo, useState } from 'react'
 import TextareaAutosize from 'react-textarea-autosize'
+
+export type ArxivPaper = {
+  arxivId: string
+  title: string
+  abstract: string
+  pdf: {
+    data: string
+    mimeType: string
+    size: number
+    filename: string
+  }
+}
 
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 B'
@@ -50,6 +62,8 @@ export function CreatorInput({
   handleFileChange,
   pdfFiles,
   handlePdfFileChange,
+  arxivPapers,
+  handleArxivPapersChange,
   selectedModel,
   children,
 }: {
@@ -67,11 +81,17 @@ export function CreatorInput({
   handleFileChange: (change: SetStateAction<File[]>) => void
   pdfFiles: File[]
   handlePdfFileChange: (change: SetStateAction<File[]>) => void
+  arxivPapers: ArxivPaper[]
+  handleArxivPapersChange: (change: SetStateAction<ArxivPaper[]>) => void
   selectedModel: string
   children: React.ReactNode
 }) {
   const [showInstructions, setShowInstructions] = useState(false)
   const [dragActive, setDragActive] = useState(false)
+  const [arxivUrl, setArxivUrl] = useState('')
+  const [isLoadingArxiv, setIsLoadingArxiv] = useState(false)
+  const [arxivError, setArxivError] = useState('')
+  const [inputMode, setInputMode] = useState<'upload' | 'arxiv'>('upload')
 
   function handlePdfInput(e: React.ChangeEvent<HTMLInputElement>) {
     handlePdfFileChange((prev) => {
@@ -101,6 +121,53 @@ export function CreatorInput({
 
   function handleFileRemove(file: File) {
     handleFileChange((prev) => prev.filter((f) => f !== file))
+  }
+
+  function handleArxivRemove(arxivId: string) {
+    handleArxivPapersChange((prev) => prev.filter((p) => p.arxivId !== arxivId))
+  }
+
+  async function handleArxivFetch() {
+    if (!arxivUrl.trim()) return
+
+    setIsLoadingArxiv(true)
+    setArxivError('')
+
+    try {
+      const response = await fetch('/api/arxiv', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: arxivUrl.trim() }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setArxivError(data.error || 'Failed to fetch ArXiv paper')
+        return
+      }
+
+      // Check if paper is already added
+      handleArxivPapersChange((prev) => {
+        if (prev.some((p) => p.arxivId === data.arxivId)) {
+          setArxivError('This paper has already been added')
+          return prev
+        }
+        // Check max count (same as PDF limit)
+        if (prev.length + pdfFiles.length >= MAX_PDF_COUNT) {
+          setArxivError(`Maximum ${MAX_PDF_COUNT} papers allowed`)
+          return prev
+        }
+        return [...prev, data]
+      })
+
+      setArxivUrl('')
+      track('ArXiv Paper Added', { arxivId: data.arxivId })
+    } catch {
+      setArxivError('Failed to fetch ArXiv paper. Please try again.')
+    } finally {
+      setIsLoadingArxiv(false)
+    }
   }
 
   function handleDrag(e: React.DragEvent) {
@@ -175,8 +242,10 @@ export function CreatorInput({
   }, [isMultiModal])
 
   const hasPdfs = pdfFiles.length > 0
+  const hasArxiv = arxivPapers.length > 0
   const hasImages = files.length > 0
-  const hasContent = hasPdfs || hasImages || input.trim().length > 0
+  const hasContent = hasPdfs || hasArxiv || hasImages || input.trim().length > 0
+  const totalPaperCount = pdfFiles.length + arxivPapers.length
 
   return (
     <form
@@ -265,51 +334,221 @@ export function CreatorInput({
                 <span>AI is working its magic...</span>
               </div>
             </div>
-          ) : !hasPdfs ? (
-            // Empty state - prompt to upload
+          ) : !hasPdfs && !hasArxiv ? (
+            // Empty state - prompt to upload or add ArXiv link
             <div className="flex flex-col items-center text-center">
               <div className="w-16 h-16 rounded-2xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center mb-4">
                 <FileText className="w-8 h-8 text-violet-600 dark:text-violet-400" />
               </div>
               <h3 className="text-lg font-semibold text-foreground mb-2">
-                Upload your research article
+                Add your research article
               </h3>
               <p className="text-sm text-muted-foreground mb-6 max-w-sm">
-                Drop a PDF here or click to browse. We{"'"}ll transform it into an interactive explorable website.
+                Upload a PDF or paste an ArXiv link. We{"'"}ll transform it into an interactive explorable website.
               </p>
-              <Button
-                type="button"
-                variant="outline"
-                className="gap-2"
-                onClick={() => document.getElementById('pdf-upload')?.click()}
-                disabled={!isMultiModal || isErrored}
-              >
-                <Upload className="w-4 h-4" />
-                Choose PDF
-              </Button>
-              <p className="text-xs text-muted-foreground mt-4">
-                Max {MAX_PDF_COUNT} PDFs, up to 3.3MB each
-              </p>
+
+              {/* Mode toggle */}
+              <div className="flex items-center gap-2 mb-4 p-1 bg-muted rounded-lg">
+                <button
+                  type="button"
+                  className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                    inputMode === 'upload'
+                      ? 'bg-background shadow-sm text-foreground'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                  onClick={() => setInputMode('upload')}
+                >
+                  <Upload className="w-3.5 h-3.5 inline-block mr-1.5" />
+                  Upload PDF
+                </button>
+                <button
+                  type="button"
+                  className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                    inputMode === 'arxiv'
+                      ? 'bg-background shadow-sm text-foreground'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                  onClick={() => setInputMode('arxiv')}
+                >
+                  <Link2 className="w-3.5 h-3.5 inline-block mr-1.5" />
+                  ArXiv Link
+                </button>
+              </div>
+
+              {inputMode === 'upload' ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="gap-2"
+                    onClick={() => document.getElementById('pdf-upload')?.click()}
+                    disabled={!isMultiModal || isErrored}
+                  >
+                    <Upload className="w-4 h-4" />
+                    Choose PDF
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-4">
+                    Max {MAX_PDF_COUNT} PDFs, up to 3.3MB each
+                  </p>
+                </>
+              ) : (
+                <div className="w-full max-w-md">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="https://arxiv.org/abs/2301.00001"
+                      value={arxivUrl}
+                      onChange={(e) => {
+                        setArxivUrl(e.target.value)
+                        setArxivError('')
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          handleArxivFetch()
+                        }
+                      }}
+                      className="flex-1 px-3 py-2 text-sm rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                      disabled={isLoadingArxiv || isErrored}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleArxivFetch}
+                      disabled={isLoadingArxiv || !arxivUrl.trim() || isErrored}
+                    >
+                      {isLoadingArxiv ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <ArrowRight className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
+                  {arxivError && (
+                    <p className="text-xs text-red-500 mt-2">{arxivError}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-3">
+                    Paste an ArXiv URL or ID (e.g., 2301.00001)
+                  </p>
+                </div>
+              )}
             </div>
           ) : (
-            // PDFs uploaded - show them
+            // Papers added - show them
             <div className="space-y-3">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-medium text-foreground">
-                  Uploaded articles ({pdfFiles.length})
+                  Articles ({totalPaperCount})
                 </h3>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs gap-1"
-                  onClick={() => document.getElementById('pdf-upload')?.click()}
-                  disabled={!isMultiModal || isErrored || pdfFiles.length >= MAX_PDF_COUNT}
-                >
-                  <Upload className="w-3 h-3" />
-                  Add more
-                </Button>
+                <div className="flex gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs gap-1"
+                    onClick={() => document.getElementById('pdf-upload')?.click()}
+                    disabled={!isMultiModal || isErrored || totalPaperCount >= MAX_PDF_COUNT}
+                  >
+                    <Upload className="w-3 h-3" />
+                    Upload
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs gap-1"
+                    onClick={() => setInputMode('arxiv')}
+                    disabled={isErrored || totalPaperCount >= MAX_PDF_COUNT}
+                  >
+                    <Link2 className="w-3 h-3" />
+                    ArXiv
+                  </Button>
+                </div>
               </div>
+
+              {/* ArXiv URL input (inline) */}
+              {inputMode === 'arxiv' && totalPaperCount < MAX_PDF_COUNT && (
+                <div className="mb-3">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="https://arxiv.org/abs/2301.00001"
+                      value={arxivUrl}
+                      onChange={(e) => {
+                        setArxivUrl(e.target.value)
+                        setArxivError('')
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          handleArxivFetch()
+                        }
+                      }}
+                      className="flex-1 px-3 py-2 text-sm rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+                      disabled={isLoadingArxiv || isErrored}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleArxivFetch}
+                      disabled={isLoadingArxiv || !arxivUrl.trim() || isErrored}
+                    >
+                      {isLoadingArxiv ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        'Add'
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setInputMode('upload')
+                        setArxivUrl('')
+                        setArxivError('')
+                      }}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  {arxivError && (
+                    <p className="text-xs text-red-500 mt-2">{arxivError}</p>
+                  )}
+                </div>
+              )}
+
+              {/* ArXiv papers */}
+              {arxivPapers.map((paper) => (
+                <div
+                  key={paper.arxivId}
+                  className="flex items-center gap-3 p-3 bg-background rounded-xl border"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
+                    <ExternalLink className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate" title={paper.title}>
+                      {truncateFileName(paper.title, 50)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      arXiv:{paper.arxivId} · {formatFileSize(paper.pdf.size)}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    onClick={() => handleArxivRemove(paper.arxivId)}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+
+              {/* Uploaded PDFs */}
               {pdfFiles.map((file) => (
                 <div
                   key={file.name}
