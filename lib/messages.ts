@@ -23,9 +23,17 @@ export type MessageFile = {
   mimeType: string
 }
 
+export type MessageStorageFile = {
+  type: 'storage-file'
+  storagePath: string
+  mimeType: string
+  filename: string
+  size: number
+}
+
 export type Message = {
   role: 'assistant' | 'user'
-  content: Array<MessageText | MessageCode | MessageImage | MessageFile>
+  content: Array<MessageText | MessageCode | MessageImage | MessageFile | MessageStorageFile>
   object?: DeepPartial<FragmentSchema>
   result?: ExecutionResult
 }
@@ -49,9 +57,42 @@ export function toAISDKMessages(messages: Message[]) {
         }
       }
 
+      // Storage files should be resolved to file content before calling this function
+      if (content.type === 'storage-file') {
+        // This is a placeholder - storage files should be resolved server-side
+        return {
+          type: 'text',
+          text: `[PDF: ${content.filename}]`,
+        }
+      }
+
       return content
     }),
   }))
+}
+
+/**
+ * Check if messages contain storage files that need to be resolved
+ */
+export function hasStorageFiles(messages: Message[]): boolean {
+  return messages.some((message) =>
+    message.content.some((content) => content.type === 'storage-file')
+  )
+}
+
+/**
+ * Get all storage file paths from messages
+ */
+export function getStorageFilePaths(messages: Message[]): string[] {
+  const paths: string[] = []
+  for (const message of messages) {
+    for (const content of message.content) {
+      if (content.type === 'storage-file') {
+        paths.push(content.storagePath)
+      }
+    }
+  }
+  return paths
 }
 
 export async function toMessageImage(files: File[]) {
@@ -93,6 +134,10 @@ export function sanitizeMessagesForStorage(messages: Message[]): Message[] {
           ? `[File uploaded: ${content.mimeType}]`
           : '[File uploaded]'
         return [{ type: 'text', text: label }]
+      }
+
+      if (content.type === 'storage-file') {
+        return [{ type: 'text', text: `[File uploaded: ${content.filename}]` }]
       }
 
       if (content.type === 'image') {

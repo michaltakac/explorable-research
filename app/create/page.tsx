@@ -11,6 +11,7 @@ import { Preview } from '@/components/preview'
 import { useAuth } from '@/lib/auth'
 import {
   Message,
+  MessageStorageFile,
   sanitizeMessagesForStorage,
   toAISDKMessages,
   toMessageImage,
@@ -234,6 +235,40 @@ export default function CreatePage() {
     })
   }
 
+  async function uploadPdfToStorage(file: File): Promise<MessageStorageFile | null> {
+    if (!session?.access_token) return null
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      const response = await fetch('/api/pdf/upload', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: formData,
+      })
+
+      if (!response.ok) {
+        console.error('Failed to upload PDF to storage')
+        return null
+      }
+
+      const result = await response.json()
+      return {
+        type: 'storage-file',
+        storagePath: result.storagePath,
+        mimeType: 'application/pdf',
+        filename: result.filename,
+        size: result.size,
+      }
+    } catch (error) {
+      console.error('Error uploading PDF:', error)
+      return null
+    }
+  }
+
   async function handleSubmitAuth(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
 
@@ -247,7 +282,23 @@ export default function CreatePage() {
 
     const content: Message['content'] = []
     const images = await toMessageImage(files)
-    const pdfs = await toMessageFile(pdfFiles)
+
+    // Upload PDFs to storage first
+    const uploadedPdfs: MessageStorageFile[] = []
+    for (const file of pdfFiles) {
+      const uploaded = await uploadPdfToStorage(file)
+      if (uploaded) {
+        uploadedPdfs.push(uploaded)
+      } else {
+        // Fallback to base64 if storage upload fails
+        const base64 = Buffer.from(await file.arrayBuffer()).toString('base64')
+        content.push({
+          type: 'file',
+          data: base64,
+          mimeType: file.type,
+        })
+      }
+    }
 
     // Only add text content if there's actual text
     if (chatInput.trim()) {
@@ -260,20 +311,29 @@ export default function CreatePage() {
       })
     }
 
-    if (pdfs.length > 0) {
-      pdfs.forEach((pdf) => {
-        content.push(pdf)
-      })
-    }
+    // Add storage-uploaded PDFs
+    uploadedPdfs.forEach((pdf) => {
+      content.push(pdf)
+    })
 
-    // Add ArXiv papers as file content
+    // Add ArXiv papers - handle both storage and base64 formats
     if (arxivPapers.length > 0) {
       arxivPapers.forEach((paper) => {
-        content.push({
-          type: 'file',
-          data: paper.pdf.data,
-          mimeType: paper.pdf.mimeType,
-        })
+        if (paper.pdf.storagePath) {
+          content.push({
+            type: 'storage-file',
+            storagePath: paper.pdf.storagePath,
+            mimeType: paper.pdf.mimeType,
+            filename: paper.pdf.filename,
+            size: paper.pdf.size,
+          })
+        } else if (paper.pdf.data) {
+          content.push({
+            type: 'file',
+            data: paper.pdf.data,
+            mimeType: paper.pdf.mimeType,
+          })
+        }
       })
     }
 
@@ -289,6 +349,7 @@ export default function CreatePage() {
       template: currentTemplate,
       model: currentModel,
       config: languageModel,
+      accessToken: session?.access_token,
       ...(shouldUseMorph && fragment ? { currentFragment: fragment } : {}),
     })
 
@@ -534,6 +595,7 @@ export default function CreatePage() {
             arxivPapers={arxivPapers}
             handleArxivPapersChange={handleArxivPapersChange}
             selectedModel={languageModel.model || ''}
+            accessToken={session?.access_token}
           >
             <ChatPicker
               templates={templates}
