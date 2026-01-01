@@ -595,6 +595,7 @@ export default function CreatePage() {
             arxivPapers={arxivPapers}
             handleArxivPapersChange={handleArxivPapersChange}
             selectedModel={languageModel.model || ''}
+            accessToken={session?.access_token}
           >
             <ChatPicker
               templates={templates}

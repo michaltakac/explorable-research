@@ -54,6 +54,7 @@ export function CreatorInput({
   arxivPapers,
   handleArxivPapersChange,
   selectedModel,
+  accessToken,
   children,
 }: {
   retry: () => void
@@ -73,6 +74,7 @@ export function CreatorInput({
   arxivPapers: ArxivPaper[]
   handleArxivPapersChange: (change: SetStateAction<ArxivPaper[]>) => void
   selectedModel: string
+  accessToken?: string
   children: React.ReactNode
 }) {
   const [showInstructions, setShowInstructions] = useState(false)
@@ -123,9 +125,14 @@ export function CreatorInput({
     setArxivError('')
 
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`
+      }
+
       const response = await fetch('/api/arxiv', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ url: arxivUrl.trim() }),
       })
 
