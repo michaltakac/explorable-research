@@ -52,14 +52,12 @@ async function resolveStorageFiles(
       continue
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const resolvedContent: any[] = []
+    const resolvedContent: unknown[] = []
 
     for (const content of message.content) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const contentAny = content as any
-      if (contentAny.type === 'storage-file') {
-        const storageFile = contentAny as StorageFileContent
+      const contentObj = content as unknown as { type: string; [key: string]: unknown }
+      if (contentObj.type === 'storage-file') {
+        const storageFile = contentObj as unknown as StorageFileContent
         const downloaded = await downloadPdfFromStorage(supabase, storageFile.storagePath)
 
         if (downloaded) {
