@@ -164,11 +164,22 @@ export async function POST(req: NextRequest) {
           },
         })
       }
-      // If upload failed, fall back to base64
+
+      // Storage upload failed - only fall back to base64 for small PDFs
+      // Large PDFs would exceed Vercel's 4.5MB response limit
+      if (pdfBuffer.byteLength > LEGACY_MAX_PDF_SIZE) {
+        console.error('Storage upload failed for large PDF:', uploadResult.error)
+        return NextResponse.json(
+          { error: `Failed to store PDF. Please try again or contact support if the issue persists.` },
+          { status: 500 }
+        )
+      }
+
       console.warn('Storage upload failed, falling back to base64:', uploadResult.error)
     }
 
-    // Return base64 for unauthenticated users or if storage upload failed
+    // Return base64 only for small PDFs (unauthenticated or storage fallback)
+    // This avoids Vercel's 4.5MB function response limit
     const base64 = Buffer.from(pdfBuffer).toString('base64')
 
     return NextResponse.json({
