@@ -1,0 +1,225 @@
+/* Custom styles for interactive elements and animations */
+/* Most styling is handled by TailwindCSS classes in index.html */
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes ping {
+  0% { transform: scaleX(0); opacity: 1; }
+  100% { transform: scaleX(1); opacity: 0; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease;
+}
+
+/* ============================================
+   NAVBAR - Scroll State
+   ============================================ */
+#navbar.scrolled {
+  background-color: rgba(249, 248, 244, 0.9);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+#navbar.scrolled .nav-title {
+  opacity: 1;
+}
+
+/* ============================================
+   SURFACE CODE DIAGRAM - Interactive Elements
+   ============================================ */
+.surface-code-grid .grid-lines {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+.surface-code-grid .grid-lines::before {
+  content: '';
+  position: absolute;
+  width: 66%;
+  height: 66%;
+  border: 1px solid #A8A29E;
+}
+
+.surface-code-grid .grid-lines::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  background: #A8A29E;
+}
+
+/* Stabilizers */
+.stabilizer {
+  position: absolute;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-left: -1.25rem;
+  margin-top: -1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: white;
+  border-radius: 0.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  background-color: #D6D3D1;
+  opacity: 0.4;
+}
+
+.stabilizer.active {
+  opacity: 1;
+  transform: scale(1.1);
+  box-shadow: 0 0 0 4px #E7E5E4;
+}
+
+.stabilizer.z-type.active {
+  background-color: #3B82F6;
+}
+
+.stabilizer.x-type.active {
+  background-color: #EF4444;
+}
+
+/* Data Qubits */
+.data-qubit {
+  position: absolute;
+  width: 2rem;
+  height: 2rem;
+  margin-left: -1rem;
+  margin-top: -1rem;
+  border-radius: 50%;
+  border: 2px solid #D6D3D1;
+  background-color: white;
+  transition: all 0.2s ease;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.data-qubit:hover {
+  border-color: #78716C;
+}
+
+.data-qubit.error {
+  background-color: #292524;
+  border-color: #1C1917;
+}
+
+.data-qubit.error::after {
+  content: '⚡';
+  font-size: 0.75rem;
+  color: #C5A059;
+}
+
+/* ============================================
+   TRANSFORMER DIAGRAM - Animation States
+   ============================================ */
+.arch-box.active {
+  border-color: #C5A059 !important;
+  background-color: rgba(197, 160, 89, 0.1) !important;
+}
+
+.transformer-box.active {
+  border-color: #292524 !important;
+  background-color: #1C1917 !important;
+}
+
+.transformer-box.active .cpu-icon {
+  color: #C5A059;
+  animation: pulse 1s infinite;
+}
+
+.transformer-box.processing .processing-lines {
+  display: block;
+  position: absolute;
+  inset: 0;
+}
+
+.transformer-box.processing .processing-lines::before,
+.transformer-box.processing .processing-lines::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  background: #C5A059;
+  animation: ping 1s infinite;
+}
+
+.transformer-box.processing .processing-lines::before {
+  top: 33%;
+}
+
+.transformer-box.processing .processing-lines::after {
+  top: 66%;
+  animation-delay: 0.15s;
+}
+
+.processing-lines {
+  display: none;
+}
+
+/* Syndrome cells */
+.syndrome-cell.active {
+  background-color: #292524 !important;
+}
+
+/* Arrow states */
+.arch-arrow.active {
+  color: #57534E;
+}
+
+/* Output stage success */
+#outputStage.success {
+  border-color: #22C55E !important;
+  background-color: rgba(34, 197, 94, 0.1) !important;
+}
+
+#outputStage.success .output-symbol {
+  color: #16A34A !important;
+}
+
+/* Progress dots */
+.progress-dot.active {
+  width: 2rem;
+  background-color: #C5A059 !important;
+}
+
+/* ============================================
+   PERFORMANCE CHART - Button States
+   ============================================ */
+.dist-btn.active {
+  background-color: #C5A059;
+  border-color: #C5A059;
+  color: #1C1917;
+}
+
+/* Bar heights are set dynamically by JS */
+.bar {
+  transition: height 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
