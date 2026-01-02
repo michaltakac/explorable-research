@@ -8,8 +8,49 @@ export function getTemplateId(id: string) {
 }
 
 const templates = {
+  [getTemplateIdSuffix('html-developer')]: {
+    name: 'Static HTML',
+    lib: [],
+    file: 'index.html',
+    instructions:
+      `A pure HTML/CSS/JavaScript template with TailwindCSS and Three.js. No build step required - static files served via http-server.
+
+You MUST FOLLOW THE STRUCTURE OF THE TEMPLATE:
+├── index.html # Main HTML file with all content structure and TailwindCSS classes
+├── style.css # Custom CSS for animations and interactive JS states only
+└── main.js # JavaScript with Three.js scenes and interactivity
+
+KEY GUIDELINES:
+- This is a NO-BUILD template. All code runs directly in the browser.
+- TailwindCSS v4 is loaded from CDN (cdn.tailwindcss.com) with custom config in a <script> tag.
+- Three.js is loaded from CDN (cdnjs.cloudflare.com) in index.html.
+- Use TailwindCSS utility classes for all layout and styling in HTML.
+- Keep style.css minimal - only for custom animations, keyframes, and JS-toggled states.
+- Use modern vanilla JavaScript (ES6+), no transpilation.
+- Google Fonts loaded via <link> tags in HTML.
+
+TAILWIND CONFIG (in index.html <script>):
+- Custom colors: 'nobel-gold' (#C5A059), 'cream' (#F9F8F4), 'cream-light' (#F5F4F0)
+- Custom fonts: 'serif' (Playfair Display), 'sans' (Inter)
+
+FEATURES TO IMPLEMENT:
+- Responsive navigation with mobile menu toggle
+- Smooth scroll to sections
+- Three.js 3D scenes (hero background, interactive visualizations)
+- Interactive diagrams (click handlers, state management in vanilla JS)
+- Animated charts and data visualizations
+- CSS animations and transitions
+
+When user provides a link to an ArXiv paper (ignore any other types of links and URLs), 
+get the contents of this paper (PDF form available on ArXiv), 
+and create an explorable research page from it using HTML with TailwindCSS classes, minimal custom CSS, and vanilla JavaScript.
+
+IMPORTANT: Keep all JavaScript in main.js, interactive state styles in style.css, and structure with Tailwind classes in index.html.
+Do not use any frameworks, bundlers, or build tools beyond CDN scripts.`,
+    port: 3000,
+  },
   [getTemplateIdSuffix('explorable-research-developer')]: {
-    name: 'Explorable Research developer',
+    name: 'React+Vite web app',
     lib: [
       "react@^19.2.0",
       "react-dom@^19.2.0",

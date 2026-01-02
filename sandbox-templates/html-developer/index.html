@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AlphaQubit - AI for Quantum Error Correction</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'nobel-gold': '#C5A059',
+            'cream': '#F9F8F4',
+            'cream-light': '#F5F4F0',
+          },
+          fontFamily: {
+            'serif': ['Playfair Display', 'Georgia', 'serif'],
+            'sans': ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="font-sans bg-cream text-stone-800 antialiased selection:bg-nobel-gold selection:text-white">
+  <!-- Navigation -->
+  <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 py-6 transition-all duration-300">
+    <div class="max-w-6xl mx-auto px-6 flex justify-between items-center">
+      <div class="flex items-center gap-4 cursor-pointer" onclick="window.scrollTo({ top: 0, behavior: 'smooth' })">
+        <div class="w-8 h-8 bg-nobel-gold rounded-full flex items-center justify-center text-white font-serif font-bold text-xl shadow-sm pb-0.5">α</div>
+        <span class="nav-title font-serif font-bold text-lg tracking-wide opacity-0 transition-opacity duration-300">
+          ALPHAQUBIT <span class="font-normal text-stone-500">2024</span>
+        </span>
+      </div>
+      
+      <div class="hidden md:flex items-center gap-8">
+        <a href="#introduction" class="nav-link text-sm font-medium tracking-wide uppercase text-stone-600 hover:text-nobel-gold transition-colors">Introduction</a>
+        <a href="#science" class="nav-link text-sm font-medium tracking-wide uppercase text-stone-600 hover:text-nobel-gold transition-colors">The Surface Code</a>
+        <a href="#impact" class="nav-link text-sm font-medium tracking-wide uppercase text-stone-600 hover:text-nobel-gold transition-colors">Impact</a>
+        <a href="#authors" class="nav-link text-sm font-medium tracking-wide uppercase text-stone-600 hover:text-nobel-gold transition-colors">Authors</a>
+        <a href="https://doi.org/10.1038/s41586-024-08148-8" target="_blank" rel="noopener noreferrer" 
+           class="px-5 py-2 bg-stone-900 text-white rounded-full text-sm font-medium hover:bg-stone-800 transition-colors shadow-sm">View Paper</a>
+      </div>
+
+      <button class="md:hidden p-2 text-stone-900" id="menuToggle">
+        <svg class="menu-icon w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+        <svg class="close-icon hidden w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile Menu -->
+  <div id="mobileMenu" class="hidden fixed inset-0 z-40 bg-cream flex flex-col items-center justify-center gap-8 animate-fade-in">
+    <a href="#introduction" class="mobile-link font-serif text-xl uppercase text-stone-800 hover:text-nobel-gold transition-colors">Introduction</a>
+    <a href="#science" class="mobile-link font-serif text-xl uppercase text-stone-800 hover:text-nobel-gold transition-colors">The Science</a>
+    <a href="#impact" class="mobile-link font-serif text-xl uppercase text-stone-800 hover:text-nobel-gold transition-colors">Impact</a>
+    <a href="#authors" class="mobile-link font-serif text-xl uppercase text-stone-800 hover:text-nobel-gold transition-colors">Authors</a>
+    <a href="https://doi.org/10.1038/s41586-024-08148-8" target="_blank" rel="noopener noreferrer" 
+       class="px-6 py-3 bg-stone-900 text-white rounded-full text-base shadow-lg">View Paper</a>
+  </div>
+
+  <!-- Hero Section -->
+  <header id="hero" class="relative h-screen flex items-center justify-center overflow-hidden">
+    <div id="heroCanvas" class="absolute inset-0 z-0 opacity-60 pointer-events-none"></div>
+    <div class="absolute inset-0 z-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(249,248,244,0.92)_0%,rgba(249,248,244,0.6)_50%,rgba(249,248,244,0.3)_100%)]"></div>
+    
+    <div class="relative z-10 max-w-6xl px-6 text-center">
+      <div class="inline-block mb-4 px-3 py-1 border border-nobel-gold text-nobel-gold text-xs tracking-[0.2em] uppercase font-bold rounded-full backdrop-blur-sm bg-white/30">
+        Nature • Nov 2024
+      </div>
+      <h1 class="font-serif text-5xl md:text-7xl lg:text-8xl font-medium leading-[0.9] mb-8 text-stone-900">
+        AlphaQubit 
+        <span class="block mt-4 italic font-normal text-3xl md:text-5xl text-stone-600">AI for Quantum Error Correction</span>
+      </h1>
+      <p class="max-w-2xl mx-auto text-lg md:text-xl text-stone-700 font-light leading-relaxed mb-12">
+        A recurrent, transformer-based neural network that learns to decode the surface code with unprecedented accuracy.
+      </p>
+      
+      <a href="#introduction" class="group inline-flex flex-col items-center gap-2 text-sm font-medium text-stone-500 hover:text-stone-900 transition-colors">
+        <span>DISCOVER</span>
+        <span class="p-2 border border-stone-300 rounded-full group-hover:border-stone-900 transition-colors bg-white/50">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <polyline points="19,12 12,19 5,12"></polyline>
+          </svg>
+        </span>
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <!-- Introduction Section -->
+    <section id="introduction" class="py-24 bg-white">
+      <div class="max-w-6xl mx-auto px-6 md:px-12 grid grid-cols-1 md:grid-cols-3 gap-12 items-start">
+        <div class="md:col-span-1">
+          <div class="inline-block mb-3 text-xs font-bold tracking-widest text-stone-500 uppercase">Introduction</div>
+          <h2 class="font-serif text-4xl mb-6 leading-tight text-stone-900">The Noise Barrier</h2>
+          <div class="w-16 h-1 bg-nobel-gold mb-6"></div>
+        </div>
+        <div class="md:col-span-2 text-lg text-stone-600 leading-relaxed space-y-6">
+          <p>
+            <span class="float-left text-6xl mr-3 -mt-2 font-serif text-nobel-gold leading-none">B</span>uilding a large-scale quantum computer requires correcting the errors that inevitably arise in physical systems. The state of the art is the <strong>surface code</strong>, which encodes information redundantly across many physical qubits.
+          </p>
+          <p>
+            However, interpreting the noisy signals from these codes—a task called "decoding"—is a massive challenge. Complex noise effects like cross-talk and leakage confuse standard algorithms. <strong class="text-stone-900 font-medium">AlphaQubit</strong> uses machine learning to learn these complex error patterns directly from the quantum processor, achieving accuracy far beyond human-designed algorithms.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Surface Code Section -->
+    <section id="science" class="py-24 bg-white border-t border-stone-100">
+      <div class="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <div>
+          <div class="inline-flex items-center gap-2 px-3 py-1 bg-stone-100 text-stone-600 text-xs font-bold tracking-widest uppercase rounded-full mb-6 border border-stone-200">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5">
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+            </svg>
+            THE SYSTEM
+          </div>
+          <h2 class="font-serif text-4xl md:text-5xl mb-6 text-stone-900">The Surface Code</h2>
+          <p class="text-lg text-stone-600 mb-6 leading-relaxed">
+            In a surface code, "Data Qubits" hold the quantum information, while "Stabilizer Qubits" interspersed between them act as watchdogs. They measure parity checks (X and Z type) to detect errors without destroying the quantum state.
+          </p>
+          <p class="text-lg text-stone-600 leading-relaxed">
+            When a data qubit flips, adjacent stabilizers light up. The pattern of these lights is the "syndrome." The decoder's job is to look at the syndrome and guess which data qubit flipped.
+          </p>
+        </div>
+        <div>
+          <div class="flex flex-col items-center p-8 bg-white rounded-xl shadow-sm border border-stone-200">
+            <h3 class="font-serif text-xl mb-4 text-stone-800">Interactive: Surface Code Detection</h3>
+            <p class="text-sm text-stone-500 mb-6 text-center max-w-md">
+              Click the grey <strong>Data Qubits</strong> to inject errors. Watch the colored <strong>Stabilizers</strong> light up when they detect an odd number of errors.
+            </p>
+            
+            <div class="surface-code-grid relative w-64 h-64 bg-cream-light rounded-lg border border-stone-200 p-4" id="surfaceCodeGrid">
+              <!-- Grid lines background -->
+              <div class="grid-lines"></div>
+              
+              <!-- Stabilizers -->
+              <div class="stabilizer z-type" data-id="0" style="left: 50%; top: 20%;">Z</div>
+              <div class="stabilizer x-type" data-id="1" style="left: 20%; top: 50%;">X</div>
+              <div class="stabilizer x-type" data-id="2" style="left: 80%; top: 50%;">X</div>
+              <div class="stabilizer z-type" data-id="3" style="left: 50%; top: 80%;">Z</div>
+              
+              <!-- Data Qubits -->
+              <button class="data-qubit" data-id="0" style="left: 20%; top: 20%;"></button>
+              <button class="data-qubit" data-id="1" style="left: 80%; top: 20%;"></button>
+              <button class="data-qubit" data-id="4" style="left: 50%; top: 50%;"></button>
+              <button class="data-qubit" data-id="2" style="left: 20%; top: 80%;"></button>
+              <button class="data-qubit" data-id="3" style="left: 80%; top: 80%;"></button>
+            </div>
+            
+            <div class="flex items-center gap-4 mt-6 text-xs font-mono text-stone-500">
+              <div class="flex items-center gap-1"><div class="w-3 h-3 rounded-full bg-stone-800"></div> Error</div>
+              <div class="flex items-center gap-1"><div class="w-3 h-3 rounded-sm bg-blue-500"></div> Z-Check</div>
+              <div class="flex items-center gap-1"><div class="w-3 h-3 rounded-sm bg-red-500"></div> X-Check</div>
+            </div>
+            
+            <div class="mt-4 h-6 text-sm font-serif italic text-stone-600" id="diagramStatus">System is stable.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Neural Decoding Section -->
+    <section class="py-24 bg-stone-900 text-stone-100 overflow-hidden relative">
+      <div class="absolute inset-0 opacity-10 pointer-events-none">
+        <div class="w-96 h-96 rounded-full bg-stone-600 blur-[100px] absolute -top-24 -left-24"></div>
+        <div class="w-96 h-96 rounded-full bg-nobel-gold blur-[100px] absolute -bottom-24 -right-24"></div>
+      </div>
+
+      <div class="max-w-6xl mx-auto px-6 relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <div class="order-2 lg:order-1">
+          <div class="flex flex-col items-center p-8 bg-cream-light rounded-xl border border-stone-200">
+            <h3 class="font-serif text-xl mb-4 text-stone-900">AlphaQubit Architecture</h3>
+            <p class="text-sm text-stone-600 mb-6 text-center max-w-md">
+              The model processes syndrome history using a recurrent transformer, attending to spatial and temporal correlations.
+            </p>
+            
+            <div class="architecture-flow flex items-center justify-center gap-4 p-6 bg-white rounded-lg shadow-inner border border-stone-200 mb-6 w-full max-w-lg min-h-56">
+              <!-- Input Stage -->
+              <div class="flex flex-col items-center gap-2">
+                <div class="arch-box w-16 h-16 border-2 border-stone-200 rounded-lg bg-stone-50 flex flex-col items-center justify-center transition-all duration-500" id="inputStage">
+                  <div class="syndrome-grid grid grid-cols-3 gap-0.5">
+                    <div class="syndrome-cell w-2 h-2 rounded-full bg-stone-300 transition-colors"></div>
+                    <div class="syndrome-cell w-2 h-2 rounded-full bg-stone-300 transition-colors"></div>
+                    <div class="syndrome-cell w-2 h-2 rounded-full bg-stone-300 transition-colors"></div>
+                    <div class="syndrome-cell w-2 h-2 rounded-full bg-stone-300 transition-colors"></div>
+                    <div class="syndrome-cell w-2 h-2 rounded-full bg-stone-300 transition-colors"></div>
+                    <div class="syndrome-cell w-2 h-2 rounded-full bg-stone-300 transition-colors"></div>
+                    <div class="syndrome-cell w-2 h-2 rounded-full bg-stone-300 transition-colors"></div>
+                    <div class="syndrome-cell w-2 h-2 rounded-full bg-stone-300 transition-colors"></div>
+                    <div class="syndrome-cell w-2 h-2 rounded-full bg-stone-300 transition-colors"></div>
+                  </div>
+                </div>
+                <span class="text-[10px] uppercase font-bold tracking-wider text-stone-500">Syndrome</span>
+              </div>
+              
+              <div class="arch-arrow text-xl text-stone-300 transition-all" id="arrow1">→</div>
+              
+              <!-- Transformer Stage -->
+              <div class="flex flex-col items-center gap-2">
+                <div class="arch-box transformer-box w-24 h-24 border-2 border-stone-200 rounded-xl bg-stone-50 flex flex-col items-center justify-center transition-all duration-500 relative overflow-hidden" id="transformerStage">
+                  <svg class="cpu-icon w-6 h-6 text-stone-300 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+                    <rect x="9" y="9" width="6" height="6"></rect>
+                    <line x1="9" y1="1" x2="9" y2="4"></line>
+                    <line x1="15" y1="1" x2="15" y2="4"></line>
+                    <line x1="9" y1="20" x2="9" y2="23"></line>
+                    <line x1="15" y1="20" x2="15" y2="23"></line>
+                    <line x1="20" y1="9" x2="23" y2="9"></line>
+                    <line x1="20" y1="14" x2="23" y2="14"></line>
+                    <line x1="1" y1="9" x2="4" y2="9"></line>
+                    <line x1="1" y1="14" x2="4" y2="14"></line>
+                  </svg>
+                  <div class="processing-lines"></div>
+                </div>
+                <span class="text-[10px] uppercase font-bold tracking-wider text-stone-500">Transformer</span>
+              </div>
+              
+              <div class="arch-arrow text-xl text-stone-300 transition-all" id="arrow2">→</div>
+              
+              <!-- Output Stage -->
+              <div class="flex flex-col items-center gap-2">
+                <div class="arch-box w-16 h-16 border-2 border-stone-200 rounded-lg bg-stone-50 flex flex-col items-center justify-center transition-all duration-500" id="outputStage">
+                  <span class="output-symbol font-serif text-2xl text-stone-300 transition-colors" id="outputSymbol">?</span>
+                </div>
+                <span class="text-[10px] uppercase font-bold tracking-wider text-stone-500">Correction</span>
+              </div>
+            </div>
+            
+            <div class="flex gap-2">
+              <div class="progress-dot w-2 h-1 rounded-full bg-stone-300 transition-all active" data-step="0"></div>
+              <div class="progress-dot w-2 h-1 rounded-full bg-stone-300 transition-all" data-step="1"></div>
+              <div class="progress-dot w-2 h-1 rounded-full bg-stone-300 transition-all" data-step="2"></div>
+              <div class="progress-dot w-2 h-1 rounded-full bg-stone-300 transition-all" data-step="3"></div>
+            </div>
+          </div>
+        </div>
+        <div class="order-1 lg:order-2">
+          <div class="inline-flex items-center gap-2 px-3 py-1 bg-stone-800 text-nobel-gold text-xs font-bold tracking-widest uppercase rounded-full mb-6 border border-stone-700">
+            THE INNOVATION
+          </div>
+          <h2 class="font-serif text-4xl md:text-5xl mb-6 text-white">Neural Decoding</h2>
+          <p class="text-lg text-stone-400 mb-6 leading-relaxed">
+            Standard decoders assume simple, independent errors. Real hardware is messier. AlphaQubit treats decoding as a sequence prediction problem, using a <strong class="text-stone-200">Recurrent Transformer</strong> architecture.
+          </p>
+          <p class="text-lg text-stone-400 leading-relaxed">
+            It ingests the history of stabilizer measurements and uses "soft" analog information—probabilities rather than just binary 0s and 1s—to make highly informed predictions about logical errors.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Results Section -->
+    <section class="py-24 bg-cream">
+      <div class="max-w-6xl mx-auto px-6 text-center">
+        <h2 class="font-serif text-4xl md:text-5xl mb-6 text-stone-900">Outperforming the Standard</h2>
+        <p class="text-lg text-stone-600 leading-relaxed max-w-2xl mx-auto">
+          AlphaQubit was tested on Google's Sycamore processor and accurate simulations. It consistently outperforms "Minimum-Weight Perfect Matching" (MWPM), the industry standard, effectively making the quantum computer appear cleaner than it actually is.
+        </p>
+        
+        <div class="performance-card flex flex-col md:flex-row gap-8 p-8 bg-stone-900 text-stone-100 rounded-xl mt-12 border border-stone-800 shadow-lg max-w-3xl mx-auto">
+          <div class="flex-1 min-w-60 text-left">
+            <h3 class="font-serif text-xl mb-2 text-nobel-gold">Performance vs Standard</h3>
+            <p class="text-stone-400 text-sm leading-relaxed mb-6">
+              AlphaQubit consistently achieves lower logical error rates (LER) than the standard Minimum-Weight Perfect Matching (MWPM) decoder.
+            </p>
+            
+            <div class="flex gap-2 mb-6">
+              <button class="dist-btn px-3 py-1.5 rounded text-sm font-medium border border-stone-700 text-stone-400 bg-transparent transition-all hover:border-stone-500 hover:text-stone-200 active" data-distance="3">Distance 3</button>
+              <button class="dist-btn px-3 py-1.5 rounded text-sm font-medium border border-stone-700 text-stone-400 bg-transparent transition-all hover:border-stone-500 hover:text-stone-200" data-distance="5">Distance 5</button>
+              <button class="dist-btn px-3 py-1.5 rounded text-sm font-medium border border-stone-700 text-stone-400 bg-transparent transition-all hover:border-stone-500 hover:text-stone-200" data-distance="11">Distance 11</button>
+            </div>
+            
+            <div class="flex items-center gap-2 font-mono text-xs text-stone-500">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5 text-nobel-gold">
+                <line x1="18" y1="20" x2="18" y2="10"></line>
+                <line x1="12" y1="20" x2="12" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="14"></line>
+              </svg>
+              LOGICAL ERROR RATE (LOWER IS BETTER)
+            </div>
+          </div>
+          
+          <div class="chart-area relative w-64 h-72 bg-white/5 rounded-xl border border-white/5 p-6 flex justify-center items-end">
+            <div class="chart-grid absolute inset-6 flex flex-col justify-between pointer-events-none opacity-10">
+              <div class="w-full h-px bg-stone-400"></div>
+              <div class="w-full h-px bg-stone-400"></div>
+              <div class="w-full h-px bg-stone-400"></div>
+              <div class="w-full h-px bg-stone-400"></div>
+            </div>
+            
+            <div class="bar-container flex justify-around items-end w-full h-full z-10">
+              <div class="bar-wrapper w-20 h-full flex flex-col justify-end items-center relative">
+                <div class="bar-value absolute top-2 font-mono text-sm font-bold text-stone-400 bg-stone-900/90 py-1 px-2 rounded backdrop-blur border border-white/5" id="mwpmValue">3.60%</div>
+                <div class="bar mwpm-bar w-full bg-stone-600 rounded-t border-t border-white/10 transition-all duration-500" id="mwpmBar"></div>
+                <div class="mt-3 text-xs font-bold uppercase tracking-wider text-stone-500">Standard</div>
+              </div>
+              
+              <div class="bar-wrapper w-20 h-full flex flex-col justify-end items-center relative">
+                <div class="bar-value absolute top-2 font-mono text-sm font-bold text-nobel-gold bg-stone-900/90 py-1 px-2 rounded backdrop-blur border border-nobel-gold/30" id="alphaValue">2.75%</div>
+                <div class="bar alpha-bar w-full bg-nobel-gold rounded-t shadow-[0_0_20px_rgba(197,160,89,0.25)] relative overflow-hidden transition-all duration-500" id="alphaBar">
+                  <div class="absolute inset-0 bg-gradient-to-tr from-transparent to-white/20"></div>
+                </div>
+                <div class="mt-3 text-xs font-bold uppercase tracking-wider text-nobel-gold">AlphaQubit</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Impact Section -->
+    <section id="impact" class="py-24 bg-white border-t border-stone-200">
+      <div class="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-12 gap-12">
+        <div class="md:col-span-5 relative">
+          <div class="aspect-square bg-cream-light rounded-xl overflow-hidden relative border border-stone-200 shadow-inner">
+            <div id="quantumCanvas" class="absolute inset-0 w-full h-full"></div>
+            <div class="absolute bottom-4 left-0 right-0 text-center text-xs text-stone-400 font-serif italic">Simulation of the Sycamore Processor environment</div>
+          </div>
+        </div>
+        <div class="md:col-span-7 flex flex-col justify-center">
+          <div class="inline-block mb-3 text-xs font-bold tracking-widest text-stone-500 uppercase">IMPACT</div>
+          <h2 class="font-serif text-4xl mb-6 text-stone-900">Towards Fault Tolerance</h2>
+          <p class="text-lg text-stone-600 mb-6 leading-relaxed">
+            AlphaQubit maintains its advantage even as the code distance increases (up to distance 11). It handles realistic noise including cross-talk and leakage, effects that often cripple standard decoders.
+          </p>
+          <p class="text-lg text-stone-600 mb-8 leading-relaxed">
+            By learning from data directly, machine learning decoders can adapt to the unique quirks of each quantum processor, potentially reducing the hardware requirements for useful quantum computing.
+          </p>
+          
+          <blockquote class="p-6 bg-cream border border-stone-200 rounded-lg border-l-4 border-l-nobel-gold">
+            <p class="font-serif italic text-xl text-stone-800 mb-4">
+              "Our work illustrates the ability of machine learning to go beyond human-designed algorithms by learning from data directly, highlighting machine learning as a strong contender for decoding in quantum computers."
+            </p>
+            <cite class="text-sm font-bold text-stone-500 tracking-wider uppercase not-italic">— Bausch et al., Nature (2024)</cite>
+          </blockquote>
+        </div>
+      </div>
+    </section>
+
+    <!-- Authors Section -->
+    <section id="authors" class="py-24 bg-cream-light border-t border-stone-300">
+      <div class="max-w-6xl mx-auto px-6">
+        <div class="text-center mb-16">
+          <div class="inline-block mb-3 text-xs font-bold tracking-widest text-stone-500 uppercase">RESEARCH TEAM</div>
+          <h2 class="font-serif text-3xl md:text-5xl mb-4 text-stone-900">Key Contributors</h2>
+          <p class="text-stone-500 max-w-2xl mx-auto">A collaboration between Google DeepMind and Google Quantum AI.</p>
+        </div>
+        
+        <div class="flex flex-wrap gap-8 justify-center">
+          <div class="author-card flex flex-col items-center p-8 bg-white rounded-xl border border-stone-200 shadow-sm hover:shadow-md transition-all w-full max-w-xs hover:border-nobel-gold/50">
+            <h3 class="font-serif text-2xl text-stone-900 text-center mb-3">Johannes Bausch</h3>
+            <div class="w-12 h-0.5 bg-nobel-gold mb-4 opacity-60"></div>
+            <p class="text-xs text-stone-500 font-bold uppercase tracking-widest text-center">Google DeepMind</p>
+          </div>
+          <div class="author-card flex flex-col items-center p-8 bg-white rounded-xl border border-stone-200 shadow-sm hover:shadow-md transition-all w-full max-w-xs hover:border-nobel-gold/50">
+            <h3 class="font-serif text-2xl text-stone-900 text-center mb-3">Andrew W. Senior</h3>
+            <div class="w-12 h-0.5 bg-nobel-gold mb-4 opacity-60"></div>
+            <p class="text-xs text-stone-500 font-bold uppercase tracking-widest text-center">Google DeepMind</p>
+          </div>
+          <div class="author-card flex flex-col items-center p-8 bg-white rounded-xl border border-stone-200 shadow-sm hover:shadow-md transition-all w-full max-w-xs hover:border-nobel-gold/50">
+            <h3 class="font-serif text-2xl text-stone-900 text-center mb-3">Francisco J. H. Heras</h3>
+            <div class="w-12 h-0.5 bg-nobel-gold mb-4 opacity-60"></div>
+            <p class="text-xs text-stone-500 font-bold uppercase tracking-widest text-center">Google DeepMind</p>
+          </div>
+          <div class="author-card flex flex-col items-center p-8 bg-white rounded-xl border border-stone-200 shadow-sm hover:shadow-md transition-all w-full max-w-xs hover:border-nobel-gold/50">
+            <h3 class="font-serif text-2xl text-stone-900 text-center mb-3">Thomas Edlich</h3>
+            <div class="w-12 h-0.5 bg-nobel-gold mb-4 opacity-60"></div>
+            <p class="text-xs text-stone-500 font-bold uppercase tracking-widest text-center">Google DeepMind</p>
+          </div>
+          <div class="author-card flex flex-col items-center p-8 bg-white rounded-xl border border-stone-200 shadow-sm hover:shadow-md transition-all w-full max-w-xs hover:border-nobel-gold/50">
+            <h3 class="font-serif text-2xl text-stone-900 text-center mb-3">Alex Davies</h3>
+            <div class="w-12 h-0.5 bg-nobel-gold mb-4 opacity-60"></div>
+            <p class="text-xs text-stone-500 font-bold uppercase tracking-widest text-center">Google DeepMind</p>
+          </div>
+          <div class="author-card flex flex-col items-center p-8 bg-white rounded-xl border border-stone-200 shadow-sm hover:shadow-md transition-all w-full max-w-xs hover:border-nobel-gold/50">
+            <h3 class="font-serif text-2xl text-stone-900 text-center mb-3">Michael Newman</h3>
+            <div class="w-12 h-0.5 bg-nobel-gold mb-4 opacity-60"></div>
+            <p class="text-xs text-stone-500 font-bold uppercase tracking-widest text-center">Google Quantum AI</p>
+          </div>
+        </div>
+        
+        <p class="text-center text-stone-500 italic mt-12">And many others contributing to hardware, theory, and engineering.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-stone-900 text-stone-400 py-16">
+    <div class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
+      <div class="text-center md:text-left">
+        <div class="text-white font-serif font-bold text-2xl mb-2">AlphaQubit</div>
+        <p class="text-sm">Visualizing "Learning high-accuracy error decoding for quantum processors"</p>
+      </div>
+    </div>
+    <div class="text-center mt-12 text-xs text-stone-600">
+      Based on research published in Nature (2024). Generated by AI.
+    </div>
+  </footer>
+
+  <!-- Three.js from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
+
