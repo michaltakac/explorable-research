@@ -5,13 +5,22 @@ export const template = Template()
   .aptInstall(['curl', 'git']) // required for waitForPort()
   .setWorkdir('/home/user')
   .skipCache()
-  .gitClone('https://github.com/michaltakac/explorable-research.git', 'repo')
-  .runCmd('mv /home/user/repo/sandbox-templates/explorable-research-developer/template/* /home/user/ && rm -rf /home/user/repo')
-  .setWorkdir('/home/user')
-  .runCmd(
-    'ls -al',
-  )
-  .runCmd(
-    'npm install',
-  )
+  // Root config files
+  .copy('app/index.html', 'index.html')
+  .copy('app/package.json', 'package.json')
+  .copy('app/package-lock.json', 'package-lock.json')
+  .copy('app/tsconfig.json', 'tsconfig.json')
+  .copy('app/vite.config.ts', 'vite.config.ts')
+  .copy('app/metadata.json', 'metadata.json')
+  .copy('app/README.md', 'README.md')
+  .copy('app/AGENTS.md', 'AGENTS.md')
+  // Source files
+  .copy('app/src/index.tsx', 'src/index.tsx')
+  .copy('app/src/index.css', 'src/index.css')
+  .copy('app/src/App.tsx', 'src/App.tsx')
+  .copy('app/src/types.ts', 'src/types.ts')
+  .copy('app/src/components/Diagrams.tsx', 'src/components/Diagrams.tsx')
+  .copy('app/src/components/QuantumScene.tsx', 'src/components/QuantumScene.tsx')
+  .runCmd('ls -al && ls -al src/')
+  .runCmd('npm install')
   .setStartCmd('npm run dev', waitForPort(3000))

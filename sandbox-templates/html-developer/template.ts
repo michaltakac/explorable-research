@@ -8,6 +8,8 @@ export const template = Template()
   .copy('index.html', 'index.html')
   .copy('style.css', 'style.css')
   .copy('main.js', 'main.js')
+  .copy('README.md', 'README.md')
+  .copy('AGENTS.md', 'AGENTS.md')
   .runCmd('ls -al')
   .setStartCmd('npx http-server . -a 0.0.0.0 -p 3000 --cors', waitForPort(3000))
 
