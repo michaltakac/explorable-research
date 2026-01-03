@@ -1,7 +1,9 @@
 import { name as templateAlias } from './package.json'
 import { template } from './template'
-import 'dotenv/config'
+import { config } from 'dotenv'
 import { defaultBuildLogger, Template } from 'e2b'
+
+config({ path: '../../.env' })
 
 Template.build(template, {
   alias: templateAlias,
