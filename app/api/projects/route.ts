@@ -1,32 +1,31 @@
 import { Message } from '@/lib/messages'
 import { FragmentSchema } from '@/lib/schema'
-import { createSupabaseServerClient, getAccessToken } from '@/lib/supabase-server'
+import { createSupabaseFromRequest, verifyUser } from '@/lib/supabase-server'
 import { ExecutionResult } from '@/lib/types'
-import { SupabaseClient } from '@supabase/supabase-js'
 
 export async function GET(request: Request) {
-  const accessToken = getAccessToken(request)
-  if (!accessToken) {
-    return new Response('Unauthorized', { status: 401 })
-  }
-
-  let supabase: SupabaseClient
+  let supabase, authContext
   try {
-    supabase = createSupabaseServerClient(accessToken)
+    const result = createSupabaseFromRequest(request)
+    supabase = result.supabase
+    authContext = result.authContext
   } catch {
     return new Response('Supabase is not configured', { status: 500 })
   }
-  const { data: userData, error: userError } =
-    await supabase.auth.getUser(accessToken)
 
-  if (userError || !userData?.user) {
+  if (authContext.mode === 'none') {
+    return new Response('Unauthorized', { status: 401 })
+  }
+
+  const user = await verifyUser(supabase, authContext)
+  if (!user) {
     return new Response('Unauthorized', { status: 401 })
   }
 
   const { data, error } = await supabase
     .from('projects')
     .select('id, title, description, created_at, result')
-    .eq('user_id', userData.user.id)
+    .eq('user_id', user.userId)
     .order('created_at', { ascending: false })
 
   if (error) {
@@ -43,21 +42,21 @@ type CreateProjectPayload = {
 }
 
 export async function POST(request: Request) {
-  const accessToken = getAccessToken(request)
-  if (!accessToken) {
-    return new Response('Unauthorized', { status: 401 })
-  }
-
-  let supabase: SupabaseClient
+  let supabase, authContext
   try {
-    supabase = createSupabaseServerClient(accessToken)
+    const result = createSupabaseFromRequest(request)
+    supabase = result.supabase
+    authContext = result.authContext
   } catch {
     return new Response('Supabase is not configured', { status: 500 })
   }
-  const { data: userData, error: userError } =
-    await supabase.auth.getUser(accessToken)
 
-  if (userError || !userData?.user) {
+  if (authContext.mode === 'none') {
+    return new Response('Unauthorized', { status: 401 })
+  }
+
+  const user = await verifyUser(supabase, authContext)
+  if (!user) {
     return new Response('Unauthorized', { status: 401 })
   }
 
@@ -72,7 +71,7 @@ export async function POST(request: Request) {
   const { data, error } = await supabase
     .from('projects')
     .insert({
-      user_id: userData.user.id,
+      user_id: user.userId,
       title: fragment.title ?? null,
       description: fragment.description ?? null,
       fragment,
