@@ -53,7 +53,7 @@ export default function ProjectDetailPage() {
   )
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
-  const { session, userTeam } = useAuth(setAuthDialog, setAuthView)
+  const { session } = useAuth(setAuthDialog, setAuthView)
 
   useEffect(() => {
     let isMounted = true
@@ -280,8 +280,6 @@ export default function ProjectDetailPage() {
           />
         </div>
         <Preview
-          teamID={userTeam?.id}
-          accessToken={session?.access_token}
           selectedTab={currentTab}
           onSelectedTabChange={setCurrentTab}
           isChatLoading={false}
