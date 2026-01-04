@@ -66,6 +66,12 @@ export function Header({ session, signOut }: HeaderProps) {
             >
               How it works
             </Link>
+            <Link 
+              href="/docs" 
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Docs
+            </Link>
             <a 
               href="https://github.com/michaltakac/explorable-research" 
               target="_blank"
@@ -196,6 +202,13 @@ export function Header({ session, signOut }: HeaderProps) {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 How it works
+              </Link>
+              <Link 
+                href="/docs" 
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Docs
               </Link>
               <a 
                 href="https://github.com/michaltakac/explorable-research" 
