@@ -10,30 +10,17 @@ export async function POST(req: Request) {
   const {
     fragment,
     userID,
-    teamID,
-    accessToken,
   }: {
     fragment: FragmentSchema
     userID: string | undefined
-    teamID: string | undefined
-    accessToken: string | undefined
   } = await req.json()
   // Create an interpreter or a sandbox
   const sbx = await Sandbox.create(fragment.template, {
     metadata: {
       template: fragment.template,
       userID: userID ?? '',
-      teamID: teamID ?? '',
     },
     timeoutMs: sandboxTimeout,
-    ...(teamID && accessToken
-      ? {
-          headers: {
-            'X-Supabase-Team': teamID,
-            'X-Supabase-Token': accessToken,
-          },
-        }
-      : {}),
   })
 
   // Install packages

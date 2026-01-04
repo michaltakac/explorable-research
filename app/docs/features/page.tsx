@@ -231,14 +231,12 @@ export default function FeaturesPage() {
         <p className="text-muted-foreground">
           Choose from a variety of state-of-the-art AI models via OpenRouter:
         </p>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { provider: 'OpenAI', models: 'GPT-4o, GPT-4o mini' },
-            { provider: 'Anthropic', models: 'Claude 3.5 Sonnet, Claude 3.5 Haiku' },
-            { provider: 'Google', models: 'Gemini Pro, Gemini Flash' },
-            { provider: 'xAI', models: 'Grok' },
-            { provider: 'DeepSeek', models: 'DeepSeek V3' },
-            { provider: 'Meta', models: 'Llama 3' },
+            { provider: 'OpenAI', models: 'GPT-5.2, GPT-5.1, GPT-5.1 Codex' },
+            { provider: 'Anthropic', models: 'Claude 4.5 Sonnet, Claude 4.5 Haiku, Claude 4.5 Opus' },
+            { provider: 'Google', models: 'Gemini 3 Pro Preview' },
+            { provider: 'xAI', models: 'Grok 4.1 Fast' },
           ].map((item) => (
             <div
               key={item.provider}
@@ -261,14 +259,14 @@ export default function FeaturesPage() {
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            'React 18',
+            'React 19',
             'TypeScript',
             'Vite',
             'Tailwind CSS',
             'Three.js',
-            'Framer Motion',
-            'Recharts',
-            'D3.js',
+            'React Three Fiber',
+            'Motion',
+            'Lucide React',
           ].map((tech) => (
             <div
               key={tech}

@@ -24,13 +24,9 @@ import { useEffect, useState } from 'react'
 export function DeployDialog({
   url,
   sbxId,
-  teamID,
-  accessToken,
 }: {
   url: string
   sbxId: string
-  teamID: string | undefined
-  accessToken: string | undefined
 }) {
   const posthog = usePostHog()
 
@@ -47,8 +43,6 @@ export function DeployDialog({
       url,
       sbxId,
       duration as Duration,
-      teamID,
-      accessToken,
     )
     setPublishedURL(publishedURL)
     posthog.capture('publish_url', {

@@ -56,7 +56,8 @@ export function CodeBlock({
         <pre
           className={cn(
             'overflow-x-auto p-4 text-sm bg-muted/50 dark:bg-muted/30',
-            showLineNumbers && 'pl-12'
+            showLineNumbers && 'pl-12',
+            `language-${prismLanguage}`
           )}
         >
           <code

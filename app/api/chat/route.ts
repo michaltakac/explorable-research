@@ -91,7 +91,6 @@ export async function POST(req: Request) {
   const {
     messages,
     userID,
-    teamID,
     template,
     model,
     config,
@@ -99,7 +98,6 @@ export async function POST(req: Request) {
   }: {
     messages: CoreMessage[]
     userID: string | undefined
-    teamID: string | undefined
     template: Templates
     model: LLMModel
     config: LLMModelConfig
