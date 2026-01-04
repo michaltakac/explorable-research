@@ -58,7 +58,7 @@ export default function CreatePage() {
   const [authView, setAuthView] = useState<ViewType>('sign_in')
   const [isRateLimited, setIsRateLimited] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
-  const { session, userTeam } = useAuth(setAuthDialog, setAuthView)
+  const { session } = useAuth(setAuthDialog, setAuthView)
   const [useMorphApply, setUseMorphApply] = useLocalStorage(
     'useMorphApply',
     process.env.NEXT_PUBLIC_USE_MORPH_APPLY === 'true',
@@ -174,8 +174,6 @@ export default function CreatePage() {
           body: JSON.stringify({
             fragment,
             userID: session?.user?.id,
-            teamID: userTeam?.id,
-            accessToken: session?.access_token,
           }),
         })
 
@@ -344,7 +342,6 @@ export default function CreatePage() {
 
     submit({
       userID: session?.user?.id,
-      teamID: userTeam?.id,
       messages: toAISDKMessages(updatedMessages),
       template: currentTemplate,
       model: currentModel,
@@ -368,7 +365,6 @@ export default function CreatePage() {
   function retry() {
     submit({
       userID: session?.user?.id,
-      teamID: userTeam?.id,
       messages: toAISDKMessages(messages),
       template: currentTemplate,
       model: currentModel,
@@ -506,8 +502,6 @@ export default function CreatePage() {
             </ChatInput>
           </div>
           <Preview
-            teamID={userTeam?.id}
-            accessToken={session?.access_token}
             selectedTab={currentTab}
             onSelectedTabChange={setCurrentTab}
             isChatLoading={isLoading}
@@ -634,3 +628,4 @@ export default function CreatePage() {
     </main>
   )
 }
+
