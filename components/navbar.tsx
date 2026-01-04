@@ -23,7 +23,7 @@ import {
 } from '@radix-ui/react-icons'
 import { Session } from '@supabase/supabase-js'
 import { track } from '@vercel/analytics'
-import { ArrowRight, BookImage, CircleUser, LogOut, Trash, Undo } from 'lucide-react'
+import { ArrowRight, BookImage, CircleUser, Key, LogOut, Trash, Undo } from 'lucide-react'
 import Link from 'next/link'
 
 export function NavBar({
@@ -165,6 +165,12 @@ export function NavBar({
                 <Link href="/projects">
                   <BookImage className="mr-2 h-4 w-4 text-muted-foreground" />
                   Projects
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/profile/api-keys">
+                  <Key className="mr-2 h-4 w-4 text-muted-foreground" />
+                  API Keys
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onSocialClick('github')}>
