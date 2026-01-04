@@ -1,35 +1,35 @@
-import { createSupabaseServerClient, getAccessToken } from '@/lib/supabase-server'
+import { createSupabaseFromRequest, verifyUser } from '@/lib/supabase-server'
 import { ExecutionResult } from '@/lib/types'
-import { SupabaseClient } from '@supabase/supabase-js'
 import { Sandbox } from '@e2b/code-interpreter'
 
 export async function GET(
   request: Request,
-  { params }: { params: { project_id: string } },
+  { params }: { params: Promise<{ project_id: string }> },
 ) {
-  const accessToken = getAccessToken(request)
-  if (!accessToken) {
-    return new Response('Unauthorized', { status: 401 })
-  }
-
-  let supabase: SupabaseClient
+  const { project_id } = await params
+  let supabase, authContext
   try {
-    supabase = createSupabaseServerClient(accessToken)
+    const result = createSupabaseFromRequest(request)
+    supabase = result.supabase
+    authContext = result.authContext
   } catch {
     return new Response('Supabase is not configured', { status: 500 })
   }
-  const { data: userData, error: userError } =
-    await supabase.auth.getUser(accessToken)
 
-  if (userError || !userData?.user) {
+  if (authContext.mode === 'none') {
+    return new Response('Unauthorized', { status: 401 })
+  }
+
+  const user = await verifyUser(supabase, authContext)
+  if (!user) {
     return new Response('Unauthorized', { status: 401 })
   }
 
   const { data, error } = await supabase
     .from('projects')
     .select('id, title, description, created_at, fragment, result, messages')
-    .eq('id', params.project_id)
-    .eq('user_id', userData.user.id)
+    .eq('id', project_id)
+    .eq('user_id', user.userId)
     .single()
 
   if (error || !data) {
@@ -41,24 +41,24 @@ export async function GET(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { project_id: string } },
+  { params }: { params: Promise<{ project_id: string }> },
 ) {
-  const accessToken = getAccessToken(request)
-  if (!accessToken) {
-    return new Response('Unauthorized', { status: 401 })
-  }
-
-  let supabase: SupabaseClient
+  const { project_id } = await params
+  let supabase, authContext
   try {
-    supabase = createSupabaseServerClient(accessToken)
+    const result = createSupabaseFromRequest(request)
+    supabase = result.supabase
+    authContext = result.authContext
   } catch {
     return new Response('Supabase is not configured', { status: 500 })
   }
 
-  const { data: userData, error: userError } =
-    await supabase.auth.getUser(accessToken)
+  if (authContext.mode === 'none') {
+    return new Response('Unauthorized', { status: 401 })
+  }
 
-  if (userError || !userData?.user) {
+  const user = await verifyUser(supabase, authContext)
+  if (!user) {
     return new Response('Unauthorized', { status: 401 })
   }
 
@@ -66,8 +66,8 @@ export async function DELETE(
   const { data: project, error: fetchError } = await supabase
     .from('projects')
     .select('id, result')
-    .eq('id', params.project_id)
-    .eq('user_id', userData.user.id)
+    .eq('id', project_id)
+    .eq('user_id', user.userId)
     .single()
 
   if (fetchError || !project) {
@@ -89,8 +89,8 @@ export async function DELETE(
   const { error: deleteError } = await supabase
     .from('projects')
     .delete()
-    .eq('id', params.project_id)
-    .eq('user_id', userData.user.id)
+    .eq('id', project_id)
+    .eq('user_id', user.userId)
 
   if (deleteError) {
     return new Response('Failed to delete project', { status: 500 })
