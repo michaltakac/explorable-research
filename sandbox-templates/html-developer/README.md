@@ -290,3 +290,4 @@ Example interactive patterns to implement:
 
 Generate content that helps readers **understand and explore** the research, not just read about it.
 
+

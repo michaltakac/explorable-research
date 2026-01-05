@@ -135,3 +135,4 @@ export function MethodBadge({ method }: { method: HttpMethod }) {
   )
 }
 
+
