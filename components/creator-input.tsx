@@ -55,6 +55,7 @@ export function CreatorInput({
   handleArxivPapersChange,
   selectedModel,
   accessToken,
+  initialArxivUrl,
   children,
 }: {
   retry: () => void
@@ -75,14 +76,23 @@ export function CreatorInput({
   handleArxivPapersChange: (change: SetStateAction<ArxivPaper[]>) => void
   selectedModel: string
   accessToken?: string
+  initialArxivUrl?: string
   children: React.ReactNode
 }) {
   const [showInstructions, setShowInstructions] = useState(false)
   const [dragActive, setDragActive] = useState(false)
-  const [arxivUrl, setArxivUrl] = useState('')
+  const [arxivUrl, setArxivUrl] = useState(initialArxivUrl || '')
   const [isLoadingArxiv, setIsLoadingArxiv] = useState(false)
   const [arxivError, setArxivError] = useState('')
-  const [inputMode, setInputMode] = useState<'upload' | 'arxiv'>('upload')
+  const [inputMode, setInputMode] = useState<'upload' | 'arxiv'>(initialArxivUrl ? 'arxiv' : 'upload')
+
+  // Handle initialArxivUrl changes (e.g., from URL query params)
+  useEffect(() => {
+    if (initialArxivUrl) {
+      setArxivUrl(initialArxivUrl)
+      setInputMode('arxiv')
+    }
+  }, [initialArxivUrl])
 
   function handlePdfInput(e: React.ChangeEvent<HTMLInputElement>) {
     handlePdfFileChange((prev) => {

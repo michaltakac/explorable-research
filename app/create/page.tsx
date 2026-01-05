@@ -30,8 +30,12 @@ import { SetStateAction, useEffect, useState, useRef } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 
 export default function CreatePage() {
+  const searchParams = useSearchParams()
+  const initialArxivUrl = searchParams.get('arxiv') || ''
+
   const [chatInput, setChatInput] = useLocalStorage('chat', '')
   const [files, setFiles] = useState<File[]>([])
   const [pdfFiles, setPdfFiles] = useState<File[]>([])
@@ -590,6 +594,7 @@ export default function CreatePage() {
             handleArxivPapersChange={handleArxivPapersChange}
             selectedModel={languageModel.model || ''}
             accessToken={session?.access_token}
+            initialArxivUrl={initialArxivUrl}
           >
             <ChatPicker
               templates={templates}
