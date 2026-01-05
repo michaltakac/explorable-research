@@ -87,7 +87,7 @@ export function Hero() {
             </Button>
           </motion.div>
 
-          {/* Example prompts */}
+          {/* Example papers */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -95,18 +95,19 @@ export function Hero() {
             className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-3xl mx-auto"
           >
             {[
-              'Visualize gradient descent with adjustable learning rates',
-              'Explain the attention mechanism in transformers',
-              'Interactive Conway\'s Game of Life simulation',
-            ].map((prompt, index) => (
+              { title: 'Attention Is All You Need', arxivUrl: 'https://arxiv.org/abs/1706.03762' },
+              { title: 'The Slingshot Mechanism: An Empirical Study of Adaptive Optimizers and the Grokking Phenomenon', arxivUrl: 'https://arxiv.org/abs/2206.04817' },
+              { title: 'Language Models are Few-Shot Learners', arxivUrl: 'https://arxiv.org/abs/2005.14165' },
+            ].map((paper, index) => (
               <Link
                 key={index}
-                href="/create"
+                href={`/create?arxiv=${encodeURIComponent(paper.arxivUrl)}`}
                 className="group flex items-start gap-3 p-4 rounded-xl bg-card border border-border/50 hover:border-violet-300 dark:hover:border-violet-700 hover:shadow-lg transition-all text-left"
+                onClick={() => track('Hero Example Click', { paper: paper.title })}
               >
                 <FileText className="w-5 h-5 text-violet-500 mt-0.5 flex-shrink-0" />
-                <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
-                  {prompt}
+                <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors line-clamp-2">
+                  {paper.title}
                 </span>
               </Link>
             ))}
