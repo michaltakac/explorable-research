@@ -26,13 +26,13 @@ import { ExecutionResult } from '@/lib/types'
 import { DeepPartial } from 'ai'
 import { experimental_useObject as useObject } from '@ai-sdk/react'
 import { usePostHog } from 'posthog-js/react'
-import { SetStateAction, useEffect, useState, useRef } from 'react'
+import { SetStateAction, useEffect, useState, useRef, Suspense } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 
-export default function CreatePage() {
+function CreatePageContent() {
   const searchParams = useSearchParams()
   const initialArxivUrl = searchParams.get('arxiv') || ''
 
@@ -631,6 +631,14 @@ export default function CreatePage() {
         </div>
       </footer>
     </main>
+  )
+}
+
+export default function CreatePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <CreatePageContent />
+    </Suspense>
   )
 }
 
