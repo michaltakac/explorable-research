@@ -1734,3 +1734,4 @@ GRANT ALL ON FUNCTION keyhippo.check_request () TO authenticated, service_role, 
 -- Notify PostgREST to reload configuration
 NOTIFY pgrst,
 'reload config';
+
