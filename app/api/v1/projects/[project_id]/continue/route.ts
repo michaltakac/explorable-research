@@ -7,14 +7,15 @@ import {
   getModelById,
   ApiProjectResponse,
 } from '@/lib/api-v1-schemas'
+import { createRateLimitResponse } from '@/lib/api-errors'
 import {
   generateFragment,
   appendContinuationMessage,
 } from '@/lib/fragment-generator'
 import {
+  updateSandboxCode,
   createSandboxFromFragment,
   getPreviewUrl,
-  killSandbox,
 } from '@/lib/sandbox'
 import { LLMModelConfig } from '@/lib/models'
 import { Message, sanitizeMessagesForStorage, toAISDKMessages } from '@/lib/messages'
@@ -28,12 +29,12 @@ import { CoreMessage } from 'ai'
 // Allow up to 5 minutes for this endpoint (fragment generation + sandbox creation)
 export const maxDuration = 300
 
-// Rate limiting configuration
-const rateLimitMaxRequests = process.env.API_V1_RATE_LIMIT
-  ? parseInt(process.env.API_V1_RATE_LIMIT)
-  : 100
-const ratelimitWindow = process.env.API_V1_RATE_LIMIT_WINDOW
-  ? (process.env.API_V1_RATE_LIMIT_WINDOW as Duration)
+// Rate limiting configuration - uses same env vars as other endpoints
+const rateLimitMaxRequests = process.env.RATE_LIMIT_MAX_REQUESTS
+  ? parseInt(process.env.RATE_LIMIT_MAX_REQUESTS)
+  : 10
+const ratelimitWindow = process.env.RATE_LIMIT_WINDOW
+  ? (process.env.RATE_LIMIT_WINDOW as Duration)
   : '1d'
 
 type ProjectData = {
@@ -88,16 +89,7 @@ export async function POST(
   )
 
   if (limit) {
-    return createApiError(
-      'RATE_LIMITED',
-      `Rate limit exceeded. Resets at ${new Date(limit.reset).toISOString()}`,
-      429,
-      {
-        limit: rateLimitMaxRequests,
-        remaining: limit.remaining,
-        reset: limit.reset,
-      }
-    )
+    return createRateLimitResponse(limit)
   }
 
   // --- Fetch Existing Project ---
@@ -180,15 +172,18 @@ export async function POST(
 
   const newFragment = fragmentResult.fragment
 
-  // --- Kill Old Sandbox (if exists) ---
+  // --- Update Existing Sandbox or Create New One ---
+  // Try to reuse existing sandbox if available, otherwise create new one
+  let sandboxResult
   if (project.result?.sbxId) {
-    await killSandbox(project.result.sbxId)
+    sandboxResult = await updateSandboxCode(project.result.sbxId, newFragment, {
+      userId: user.userId,
+    })
+  } else {
+    sandboxResult = await createSandboxFromFragment(newFragment, {
+      userId: user.userId,
+    })
   }
-
-  // --- Create New Sandbox ---
-  const sandboxResult = await createSandboxFromFragment(newFragment, {
-    userId: user.userId,
-  })
 
   if (!sandboxResult.success) {
     return createApiError(

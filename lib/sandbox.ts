@@ -154,6 +154,101 @@ export async function killSandbox(sandboxId: string): Promise<boolean> {
 }
 
 /**
+ * Update code in an existing sandbox
+ * Attempts to connect to existing sandbox and update its code
+ * Falls back to creating a new sandbox if connection fails
+ */
+export async function updateSandboxCode(
+  existingSandboxId: string,
+  fragment: FragmentSchema,
+  options?: SandboxOptions
+): Promise<SandboxCreationResult | SandboxCreationError> {
+  try {
+    // Try to connect to existing sandbox
+    const sbx = await Sandbox.connect(existingSandboxId)
+
+    // Install additional dependencies if needed
+    if (fragment.has_additional_dependencies && fragment.install_dependencies_command) {
+      try {
+        await sbx.commands.run(fragment.install_dependencies_command)
+      } catch (error) {
+        console.error('Failed to install dependencies:', error)
+        return {
+          success: false,
+          error: `Failed to install dependencies: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          errorCode: 'DEPENDENCY_INSTALL_FAILED',
+        }
+      }
+    }
+
+    // Write updated code to the filesystem
+    try {
+      if (fragment.code && Array.isArray(fragment.code)) {
+        // Multiple files
+        for (const file of fragment.code as Array<{ file_path: string; file_content: string }>) {
+          await sbx.files.write(file.file_path, file.file_content)
+        }
+      } else if (fragment.code && fragment.file_path) {
+        // Single file
+        await sbx.files.write(fragment.file_path, fragment.code)
+      }
+    } catch (error) {
+      console.error('Failed to write code:', error)
+      return {
+        success: false,
+        error: `Failed to write code to sandbox: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        errorCode: 'CODE_WRITE_FAILED',
+      }
+    }
+
+    // Execute code or return URL depending on template
+    if (fragment.template === 'code-interpreter-v1') {
+      try {
+        const { logs, error, results } = await sbx.runCode(fragment.code || '')
+
+        const result: ExecutionResultInterpreter = {
+          sbxId: sbx.sandboxId,
+          template: fragment.template,
+          stdout: logs.stdout,
+          stderr: logs.stderr,
+          runtimeError: error,
+          cellResults: results,
+        }
+
+        return {
+          success: true,
+          result,
+        }
+      } catch (error) {
+        console.error('Code execution failed:', error)
+        return {
+          success: false,
+          error: `Code execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          errorCode: 'EXECUTION_FAILED',
+        }
+      }
+    }
+
+    // For web templates, return the sandbox URL
+    const result: ExecutionResultWeb = {
+      sbxId: sbx.sandboxId,
+      template: fragment.template,
+      url: `https://${sbx.getHost(fragment.port || 80)}`,
+    }
+
+    return {
+      success: true,
+      result,
+    }
+  } catch (error) {
+    // Connection failed - sandbox might have expired
+    // Fall back to creating a new sandbox
+    console.log(`Failed to connect to existing sandbox ${existingSandboxId}, creating new one:`, error)
+    return createSandboxFromFragment(fragment, options)
+  }
+}
+
+/**
  * Get the preview URL from an execution result
  */
 export function getPreviewUrl(result: ExecutionResult): string | null {

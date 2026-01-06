@@ -7,6 +7,7 @@ import {
   getModelById,
   ApiProjectResponse,
 } from '@/lib/api-v1-schemas'
+import { createRateLimitResponse } from '@/lib/api-errors'
 import { processArxivPaper } from '@/lib/arxiv'
 import {
   generateFragment,
@@ -23,12 +24,12 @@ import { Duration } from '@/lib/duration'
 // Allow up to 5 minutes for this endpoint (fragment generation + sandbox creation)
 export const maxDuration = 300
 
-// Rate limiting configuration
-const rateLimitMaxRequests = process.env.API_V1_RATE_LIMIT
-  ? parseInt(process.env.API_V1_RATE_LIMIT)
-  : 100
-const ratelimitWindow = process.env.API_V1_RATE_LIMIT_WINDOW
-  ? (process.env.API_V1_RATE_LIMIT_WINDOW as Duration)
+// Rate limiting configuration - uses same env vars as other endpoints
+const rateLimitMaxRequests = process.env.RATE_LIMIT_MAX_REQUESTS
+  ? parseInt(process.env.RATE_LIMIT_MAX_REQUESTS)
+  : 10
+const ratelimitWindow = process.env.RATE_LIMIT_WINDOW
+  ? (process.env.RATE_LIMIT_WINDOW as Duration)
   : '1d'
 
 export async function POST(request: NextRequest) {
@@ -68,16 +69,7 @@ export async function POST(request: NextRequest) {
   )
 
   if (limit) {
-    return createApiError(
-      'RATE_LIMITED',
-      `Rate limit exceeded. Resets at ${new Date(limit.reset).toISOString()}`,
-      429,
-      {
-        limit: rateLimitMaxRequests,
-        remaining: limit.remaining,
-        reset: limit.reset,
-      }
-    )
+    return createRateLimitResponse(limit)
   }
 
   // --- Parse and Validate Input ---
