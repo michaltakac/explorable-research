@@ -4,10 +4,35 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseKey =
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ||
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 const enableSupabase = process.env.NEXT_PUBLIC_ENABLE_SUPABASE
 const isSupabaseEnabled = enableSupabase
   ? !['false', '0', 'off'].includes(enableSupabase.toLowerCase())
   : true
+
+/**
+ * Creates a Supabase admin client with service role key.
+ * Use this for server-side operations that need to bypass RLS,
+ * such as background processing where user context is not available.
+ */
+export function createSupabaseAdmin(): SupabaseClient {
+  if (!isSupabaseEnabled || !supabaseUrl) {
+    throw new Error('Supabase environment variables are missing')
+  }
+
+  const key = supabaseServiceRoleKey || supabaseKey
+  if (!key) {
+    throw new Error('Supabase key is missing')
+  }
+
+  return createClient(supabaseUrl, key, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false,
+    },
+  })
+}
 
 export type AuthMode = 'jwt' | 'api_key' | 'none'
 

@@ -178,18 +178,19 @@ function CreatePageContent() {
           body: JSON.stringify({
             fragment,
             userID: session?.user?.id,
+            existingSandboxId: result?.sbxId, // Reuse existing sandbox if available
           }),
         })
 
-        const result = await response.json()
-        posthog.capture('sandbox_created', { url: result.url })
+        const sandboxResult = await response.json()
+        posthog.capture('sandbox_created', { url: sandboxResult.url })
 
-        setResult(result)
-        setCurrentPreview({ fragment, result })
-        setMessage({ result })
+        setResult(sandboxResult)
+        setCurrentPreview({ fragment, result: sandboxResult })
+        setMessage({ result: sandboxResult })
         setCurrentTab('fragment')
         setIsPreviewLoading(false)
-        await saveProject({ fragment, result })
+        await saveProject({ fragment, result: sandboxResult })
       }
     },
   })
