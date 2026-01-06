@@ -1,5 +1,4 @@
 import { NextRequest } from 'next/server'
-import { waitUntil } from '@vercel/functions'
 import { createSupabaseFromRequest, verifyUser, createSupabaseAdmin } from '@/lib/supabase-server'
 import {
   createProjectSchema,
@@ -34,6 +33,25 @@ const rateLimitMaxRequests = process.env.RATE_LIMIT_MAX_REQUESTS
 const ratelimitWindow = process.env.RATE_LIMIT_WINDOW
   ? (process.env.RATE_LIMIT_WINDOW as Duration)
   : '1d'
+
+/**
+ * Wrapper for background processing that works both locally and on Vercel.
+ * On Vercel, uses waitUntil to keep the function alive after response.
+ * Locally, just fires the promise without waiting.
+ */
+function runInBackground(promise: Promise<void>): void {
+  // Try to use Vercel's waitUntil if available
+  try {
+    // Dynamic import to avoid build errors locally
+    const { waitUntil } = require('@vercel/functions')
+    waitUntil(promise)
+  } catch {
+    // Locally, just fire and forget (the promise will run but we won't wait)
+    promise.catch((error) => {
+      console.error('Background processing error:', error)
+    })
+  }
+}
 
 /**
  * Update project status in database
@@ -338,7 +356,7 @@ export async function POST(request: NextRequest) {
   }
 
   // --- Start Background Processing ---
-  waitUntil(processProjectCreation(projectData.id, user.userId, input))
+  runInBackground(processProjectCreation(projectData.id, user.userId, input))
 
   // --- Return Immediately ---
   const response: AsyncProjectResponse = {
