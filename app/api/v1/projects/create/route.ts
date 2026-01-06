@@ -291,16 +291,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (authContext.mode === 'none') {
-    return createApiError('UNAUTHORIZED', 'API key is required', 401)
-  }
-
-  // Only allow API key authentication for v1 endpoints
-  if (authContext.mode !== 'api_key') {
-    return createApiError(
-      'UNAUTHORIZED',
-      'API key authentication is required for this endpoint',
-      401
-    )
+    return createApiError('UNAUTHORIZED', 'Authentication required', 401)
   }
 
   const user = await verifyUser(supabase, authContext)
