@@ -5,10 +5,10 @@ import { UserDropdown } from '@/components/user-dropdown'
 import { Avatar, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
-import { GitHubLogoIcon } from '@radix-ui/react-icons'
+import { GitHubLogoIcon, TwitterLogoIcon } from '@radix-ui/react-icons'
 import { Session } from '@supabase/supabase-js'
 import { track } from '@vercel/analytics'
-import { ArrowRight, LogOut, Menu, X } from 'lucide-react'
+import { ArrowRight, CircleUser, Key, LogOut, Menu, X } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 
@@ -153,13 +153,6 @@ export function Header({ session, signOut }: HeaderProps) {
               <div className="flex flex-col gap-2 pt-4 border-t border-border/50">
                 {session ? (
                   <>
-                    <Link 
-                      href="/projects"
-                      className="text-sm font-medium text-foreground hover:text-foreground/80 transition-colors"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Projects
-                    </Link>
                     <div className="flex items-center gap-2 py-2">
                       <Avatar className="w-6 h-6">
                         <AvatarImage
@@ -174,13 +167,59 @@ export function Header({ session, signOut }: HeaderProps) {
                         {session.user.email}
                       </span>
                     </div>
-                    <Button 
+                    <Link
+                      href="/profile"
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <CircleUser className="h-4 w-4" />
+                      Profile
+                    </Link>
+                    <Link
+                      href="/projects"
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Projects
+                    </Link>
+                    <Link
+                      href="/profile/api-keys"
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Key className="h-4 w-4" />
+                      API Keys
+                    </Link>
+                    <a
+                      href="https://github.com/michaltakac/explorable-research"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2"
+                      onClick={() => {
+                        track('Star on GitHub Click', { location: 'header-mobile-dropdown' })
+                        setMobileMenuOpen(false)
+                      }}
+                    >
+                      <GitHubLogoIcon className="h-4 w-4" />
+                      Star on GitHub
+                    </a>
+                    <a
+                      href="https://x.com/michaltakac"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <TwitterLogoIcon className="h-4 w-4" />
+                      Follow @michaltakac on X
+                    </a>
+                    <Button
                       variant="outline"
                       onClick={() => {
                         signOut?.()
                         setMobileMenuOpen(false)
                       }}
-                      className="w-full"
+                      className="w-full mt-2"
                     >
                       <LogOut className="mr-2 h-4 w-4" />
                       Sign out
