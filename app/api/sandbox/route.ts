@@ -10,18 +10,40 @@ export async function POST(req: Request) {
   const {
     fragment,
     userID,
+    existingSandboxId,
   }: {
     fragment: FragmentSchema
     userID: string | undefined
+    existingSandboxId?: string
   } = await req.json()
-  // Create an interpreter or a sandbox
-  const sbx = await Sandbox.create(fragment.template, {
-    metadata: {
-      template: fragment.template,
-      userID: userID ?? '',
-    },
-    timeoutMs: sandboxTimeout,
-  })
+
+  let sbx: Sandbox
+
+  // Try to reuse existing sandbox if provided
+  if (existingSandboxId) {
+    try {
+      sbx = await Sandbox.connect(existingSandboxId)
+    } catch (error) {
+      // Connection failed - sandbox might have expired, create a new one
+      console.log(`Failed to connect to existing sandbox ${existingSandboxId}, creating new one:`, error)
+      sbx = await Sandbox.create(fragment.template, {
+        metadata: {
+          template: fragment.template,
+          userID: userID ?? '',
+        },
+        timeoutMs: sandboxTimeout,
+      })
+    }
+  } else {
+    // Create a new sandbox
+    sbx = await Sandbox.create(fragment.template, {
+      metadata: {
+        template: fragment.template,
+        userID: userID ?? '',
+      },
+      timeoutMs: sandboxTimeout,
+    })
+  }
 
   // Install packages
   if (fragment.has_additional_dependencies) {
@@ -30,9 +52,9 @@ export async function POST(req: Request) {
 
   // Copy code to fs
   if (fragment.code && Array.isArray(fragment.code)) {
-    fragment.code.forEach(async (file) => {
+    for (const file of fragment.code as Array<{ file_path: string; file_content: string }>) {
       await sbx.files.write(file.file_path, file.file_content)
-    })
+    }
   } else {
     await sbx.files.write(fragment.file_path, fragment.code)
   }
