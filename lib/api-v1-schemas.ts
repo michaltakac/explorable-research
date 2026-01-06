@@ -5,6 +5,20 @@ import modelsJson from './models.json'
 const validModelIds = modelsJson.models.map((m) => m.id)
 
 /**
+ * Project status values for async pipeline tracking
+ */
+export const PROJECT_STATUSES = {
+  PENDING: 'pending',
+  PROCESSING_PDF: 'processing_pdf',
+  GENERATING: 'generating',
+  CREATING_SANDBOX: 'creating_sandbox',
+  READY: 'ready',
+  FAILED: 'failed',
+} as const
+
+export type ProjectStatus = (typeof PROJECT_STATUSES)[keyof typeof PROJECT_STATUSES]
+
+/**
  * Schema for LLM model configuration options
  */
 export const modelConfigSchema = z
@@ -31,6 +45,7 @@ export const imageAttachmentSchema = z.object({
 
 /**
  * Schema for POST /api/v1/projects/create
+ * Returns immediately with project ID and status - processing happens asynchronously
  */
 export const createProjectSchema = z
   .object({
@@ -54,10 +69,6 @@ export const createProjectSchema = z
       })
       .optional(),
     model_config: modelConfigSchema,
-
-    // Response options
-    include_code: z.boolean().default(false),
-    include_messages: z.boolean().default(false),
   })
   .refine((data) => data.arxiv_url || data.pdf_file, {
     message: 'Either arxiv_url or pdf_file must be provided',
@@ -72,6 +83,7 @@ export type CreateProjectInput = z.infer<typeof createProjectSchema>
 
 /**
  * Schema for POST /api/v1/projects/[project_id]/continue
+ * Returns immediately with updated status - processing happens asynchronously
  */
 export const continueProjectSchema = z.object({
   // Required instruction for continuation
@@ -88,21 +100,50 @@ export const continueProjectSchema = z.object({
     })
     .optional(),
   model_config: modelConfigSchema,
-
-  // Response options
-  include_code: z.boolean().default(false),
-  include_messages: z.boolean().default(false),
 })
 
 export type ContinueProjectInput = z.infer<typeof continueProjectSchema>
 
 /**
- * API response schema for project creation/continuation
+ * Async response for project creation/continuation
+ * Returns immediately with project ID and status
+ */
+export type AsyncProjectResponse = {
+  success: true
+  project: {
+    id: string
+    status: ProjectStatus
+    created_at: string
+    updated_at?: string
+  }
+}
+
+/**
+ * Response for project status endpoint
+ */
+export type ProjectStatusResponse = {
+  success: true
+  project: {
+    id: string
+    status: ProjectStatus
+    title?: string
+    description?: string
+    created_at: string
+    updated_at?: string
+    preview_url?: string
+    sandbox_id?: string
+    error_message?: string
+  }
+}
+
+/**
+ * Full API response schema for project retrieval (GET endpoint)
  */
 export type ApiProjectResponse = {
   success: true
   project: {
     id: string
+    status: ProjectStatus
     title: string
     description: string
     created_at: string

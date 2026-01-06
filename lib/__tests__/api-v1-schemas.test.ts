@@ -244,30 +244,6 @@ describe('API V1 Schemas', () => {
       }
     })
 
-    it('should default include_code to false', () => {
-      const request = {
-        arxiv_url: 'https://arxiv.org/abs/2301.00001',
-      }
-
-      const result = createProjectSchema.safeParse(request)
-      expect(result.success).toBe(true)
-      if (result.success) {
-        expect(result.data.include_code).toBe(false)
-      }
-    })
-
-    it('should default include_messages to false', () => {
-      const request = {
-        arxiv_url: 'https://arxiv.org/abs/2301.00001',
-      }
-
-      const result = createProjectSchema.safeParse(request)
-      expect(result.success).toBe(true)
-      if (result.success) {
-        expect(result.data.include_messages).toBe(false)
-      }
-    })
-
     it('should limit instruction length to 10000 characters', () => {
       const longInstruction = 'a'.repeat(10001)
       const invalidRequest = {
