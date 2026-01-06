@@ -24,7 +24,7 @@ export async function GET(request: Request) {
 
   const { data, error } = await supabase
     .from('projects')
-    .select('id, title, description, created_at, result')
+    .select('id, title, description, created_at, status, result')
     .eq('user_id', user.userId)
     .order('created_at', { ascending: false })
 
@@ -77,6 +77,7 @@ export async function POST(request: Request) {
       fragment,
       result,
       messages: messages ?? null,
+      status: 'ready', // Already has result, so it's ready
     })
     .select('id')
     .single()
