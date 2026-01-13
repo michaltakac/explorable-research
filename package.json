@@ -32,6 +32,7 @@
     "@supabase/supabase-js": "^2.50.0",
     "@upstash/ratelimit": "^2.0.1",
     "@vercel/analytics": "^1.5.0",
+    "@vercel/functions": "^3.3.5",
     "@vercel/kv": "^2.0.0",
     "ai": "^4.3.19",
     "class-variance-authority": "^0.7.0",
@@ -53,6 +54,7 @@
     "simple-icons": "^14.12.3",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
+    "unique-names-generator": "^4.7.1",
     "usehooks-ts": "^3.1.0",
     "zod": "^3.23.8"
   },

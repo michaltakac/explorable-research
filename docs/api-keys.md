@@ -77,12 +77,23 @@ async function listProjects() {
 
 All endpoints that support JWT authentication also support API key authentication:
 
+### Project Management
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/projects` | List your projects |
-| POST | `/api/projects` | Create a new project |
 | GET | `/api/projects/:id` | Get a specific project |
 | DELETE | `/api/projects/:id` | Delete a project |
+
+### Project Creation API (v1)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/projects/create` | Create project from PDF/ArXiv (sync) |
+| GET | `/api/v1/projects/:id/status` | Get project status |
+| POST | `/api/v1/projects/:id/continue` | Continue project with new instructions (sync) |
+
+See [API v1 Documentation](./api-project-creation-plan.md) for detailed usage.
 
 ## Managing API Keys
 

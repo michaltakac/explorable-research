@@ -8,7 +8,7 @@ import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { GitHubLogoIcon, TwitterLogoIcon } from '@radix-ui/react-icons'
 import { Session } from '@supabase/supabase-js'
 import { track } from '@vercel/analytics'
-import { ArrowRight, CircleUser, Key, LogOut, Menu, X } from 'lucide-react'
+import { ArrowRight, BookImage, CircleUser, Key, LogOut, Menu, X } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 
@@ -180,6 +180,7 @@ export function Header({ session, signOut }: HeaderProps) {
                       className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2"
                       onClick={() => setMobileMenuOpen(false)}
                     >
+                      <BookImage className="h-4 w-4" />
                       Projects
                     </Link>
                     <Link
