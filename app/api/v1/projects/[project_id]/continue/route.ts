@@ -1,13 +1,12 @@
 import { NextRequest } from 'next/server'
-import { createSupabaseFromRequest, verifyUser, createSupabaseAdmin } from '@/lib/supabase-server'
+import { createSupabaseFromRequest, verifyUser } from '@/lib/supabase-server'
 import {
   continueProjectSchema,
   createApiError,
   getDefaultModel,
   getModelById,
-  AsyncProjectResponse,
+  SyncProjectResponse,
   PROJECT_STATUSES,
-  ContinueProjectInput,
 } from '@/lib/api-v1-schemas'
 import { createRateLimitResponse } from '@/lib/api-errors'
 import {
@@ -28,35 +27,16 @@ import { FragmentSchema } from '@/lib/schema'
 import { ExecutionResult } from '@/lib/types'
 import { CoreMessage } from 'ai'
 
-// Allow up to 5 minutes for background processing
+// Allow up to 5 minutes for processing (AI generation can take time)
 export const maxDuration = 300
 
-// Rate limiting configuration - uses same env vars as other endpoints
+// Rate limiting configuration
 const rateLimitMaxRequests = process.env.RATE_LIMIT_MAX_REQUESTS
   ? parseInt(process.env.RATE_LIMIT_MAX_REQUESTS)
   : 10
 const ratelimitWindow = process.env.RATE_LIMIT_WINDOW
   ? (process.env.RATE_LIMIT_WINDOW as Duration)
   : '1d'
-
-/**
- * Wrapper for background processing that works both locally and on Vercel.
- * On Vercel, uses waitUntil to keep the function alive after response.
- * Locally, just fires the promise without waiting.
- */
-function runInBackground(promise: Promise<void>): void {
-  // Try to use Vercel's waitUntil if available
-  try {
-    // Dynamic import to avoid build errors locally
-    const { waitUntil } = require('@vercel/functions')
-    waitUntil(promise)
-  } catch {
-    // Locally, just fire and forget (the promise will run but we won't wait)
-    promise.catch((error) => {
-      console.error('Background processing error:', error)
-    })
-  }
-}
 
 type ProjectData = {
   id: string
@@ -67,158 +47,6 @@ type ProjectData = {
   result: ExecutionResult
   messages: Message[]
   created_at: string
-}
-
-/**
- * Update project status in database
- */
-async function updateProjectStatus(
-  projectId: string,
-  status: string,
-  updates?: Record<string, unknown>
-) {
-  const supabase = createSupabaseAdmin()
-  const { error } = await supabase
-    .from('projects')
-    .update({
-      status,
-      updated_at: new Date().toISOString(),
-      ...updates,
-    })
-    .eq('id', projectId)
-
-  if (error) {
-    console.error(`Failed to update project ${projectId} status:`, error)
-  }
-}
-
-/**
- * Background processing for project continuation
- */
-async function processProjectContinuation(
-  projectId: string,
-  userId: string,
-  project: ProjectData,
-  input: ContinueProjectInput
-) {
-  const supabase = createSupabaseAdmin()
-
-  try {
-    // --- Build Continuation Messages ---
-    // Convert stored messages to CoreMessage format
-    const existingMessages = toAISDKMessages(project.messages || []) as CoreMessage[]
-
-    const updatedMessages = appendContinuationMessage(existingMessages, {
-      instruction: input.instruction,
-      images: input.images,
-      previousFragment: project.fragment,
-    })
-
-    // --- Get Model Configuration ---
-    const model = input.model ? getModelById(input.model) : getDefaultModel()
-    if (!model) {
-      await updateProjectStatus(projectId, PROJECT_STATUSES.FAILED, {
-        error_message: 'Invalid model ID',
-      })
-      return
-    }
-
-    const modelConfig: LLMModelConfig = {
-      ...(input.model_config || {}),
-    }
-
-    // --- Get Template from existing project ---
-    const templateId = getTemplateIdSuffix(project.fragment.template)
-    const template = { [templateId]: templates[templateId] } as typeof templates
-
-    // --- Generate New Fragment ---
-    await updateProjectStatus(projectId, PROJECT_STATUSES.GENERATING)
-
-    const fragmentResult = await generateFragment(
-      updatedMessages,
-      template,
-      model,
-      modelConfig,
-      supabase
-    )
-
-    if (!fragmentResult.success) {
-      await updateProjectStatus(projectId, PROJECT_STATUSES.FAILED, {
-        error_message: fragmentResult.error,
-      })
-      return
-    }
-
-    const newFragment = fragmentResult.fragment
-
-    // --- Update Existing Sandbox or Create New One ---
-    await updateProjectStatus(projectId, PROJECT_STATUSES.CREATING_SANDBOX)
-
-    let sandboxResult
-    if (project.result?.sbxId) {
-      sandboxResult = await updateSandboxCode(project.result.sbxId, newFragment, {
-        userId,
-      })
-    } else {
-      sandboxResult = await createSandboxFromFragment(newFragment, {
-        userId,
-      })
-    }
-
-    if (!sandboxResult.success) {
-      await updateProjectStatus(projectId, PROJECT_STATUSES.FAILED, {
-        error_message: sandboxResult.error,
-      })
-      return
-    }
-
-    const executionResult = sandboxResult.result
-    const previewUrl = getPreviewUrl(executionResult)
-
-    // --- Update Messages for Storage ---
-    const storageMessages: Message[] = [
-      ...(project.messages || []),
-      {
-        role: 'user' as const,
-        content: [
-          ...(input.images?.map(() => ({
-            type: 'text' as const,
-            text: '[Image uploaded]',
-          })) || []),
-          { type: 'text' as const, text: input.instruction },
-        ],
-      },
-      {
-        role: 'assistant' as const,
-        content: [
-          {
-            type: 'text' as const,
-            text: newFragment.commentary || 'Updated interactive visualization.',
-          },
-        ],
-        object: newFragment,
-        result: executionResult,
-      },
-    ]
-
-    const sanitizedMessages = sanitizeMessagesForStorage(storageMessages)
-
-    // --- Update Project with all data and mark as ready ---
-    await updateProjectStatus(projectId, PROJECT_STATUSES.READY, {
-      title: newFragment.title || project.title,
-      description: newFragment.description || project.description,
-      fragment: newFragment,
-      result: executionResult,
-      messages: sanitizedMessages,
-    })
-
-    console.log(`Project ${projectId} continued successfully, preview: ${previewUrl}`)
-  } catch (error) {
-    console.error(`Failed to continue project ${projectId}:`, error)
-    await updateProjectStatus(projectId, PROJECT_STATUSES.FAILED, {
-      error_message: error instanceof Error ? error.message : 'Unknown error',
-    })
-  }
 }
 
 export async function POST(
@@ -300,37 +128,177 @@ export async function POST(
 
   const input = parseResult.data
 
-  // --- Update Project Status to Pending ---
+  // --- Build Continuation Messages ---
+  console.log(`Continuing project ${project_id}...`)
+
+  // Convert stored messages to CoreMessage format
+  const existingMessages = toAISDKMessages(project.messages || []) as CoreMessage[]
+
+  const updatedMessages = appendContinuationMessage(existingMessages, {
+    instruction: input.instruction,
+    images: input.images,
+    previousFragment: project.fragment,
+  })
+
+  // --- Get Model Configuration ---
+  const model = input.model ? getModelById(input.model) : getDefaultModel()
+  if (!model) {
+    return createApiError('INVALID_MODEL', 'Invalid model ID', 400, { modelId: input.model })
+  }
+
+  console.log(`Using model: ${model.id}`)
+
+  const modelConfig: LLMModelConfig = {
+    ...(input.model_config || {}),
+  }
+
+  // --- Get Template from existing project ---
+  // The fragment.template already contains the full template ID (with -dev suffix in dev mode)
+  // So we use it directly, but also check if it exists in templates
+  let templateId = project.fragment.template
+
+  // If the template doesn't exist (e.g., fragment was created in different env),
+  // try to find the correct one
+  if (!templates[templateId]) {
+    // Try without -dev suffix
+    const baseId = templateId.replace(/-dev$/, '')
+    templateId = getTemplateIdSuffix(baseId)
+  }
+
+  if (!templates[templateId]) {
+    return createApiError(
+      'TEMPLATE_NOT_FOUND',
+      `Template "${project.fragment.template}" not found`,
+      400
+    )
+  }
+
+  const template = { [templateId]: templates[templateId] } as typeof templates
+  console.log(`Using template: ${templateId}`)
+
+  // --- Generate New Fragment ---
+  console.log('Starting AI generation...')
+
+  const fragmentResult = await generateFragment(
+    updatedMessages,
+    template,
+    model,
+    modelConfig,
+    supabase
+  )
+
+  if (!fragmentResult.success) {
+    return createApiError(
+      fragmentResult.errorCode || 'GENERATION_FAILED',
+      fragmentResult.error,
+      500
+    )
+  }
+
+  const newFragment = fragmentResult.fragment
+  console.log(`Fragment generated: "${newFragment.title}"`)
+
+  // --- Update Existing Sandbox or Create New One ---
+  console.log('Updating sandbox...')
+
+  let sandboxResult
+  if (project.result?.sbxId) {
+    sandboxResult = await updateSandboxCode(project.result.sbxId, newFragment, {
+      userId: user.userId,
+    })
+  } else {
+    sandboxResult = await createSandboxFromFragment(newFragment, {
+      userId: user.userId,
+    })
+  }
+
+  if (!sandboxResult.success) {
+    return createApiError(
+      sandboxResult.errorCode || 'SANDBOX_FAILED',
+      sandboxResult.error,
+      500
+    )
+  }
+
+  const executionResult = sandboxResult.result
+  const previewUrl = getPreviewUrl(executionResult)
+
+  console.log(`Sandbox updated: ${executionResult.sbxId}`)
+  console.log(`Preview URL: ${previewUrl}`)
+
+  // --- Update Messages for Storage ---
+  const storageMessages: Message[] = [
+    ...(project.messages || []),
+    {
+      role: 'user' as const,
+      content: [
+        ...(input.images?.map(() => ({
+          type: 'text' as const,
+          text: '[Image uploaded]',
+        })) || []),
+        { type: 'text' as const, text: input.instruction },
+      ],
+    },
+    {
+      role: 'assistant' as const,
+      content: [
+        {
+          type: 'text' as const,
+          text: newFragment.commentary || 'Updated interactive visualization.',
+        },
+      ],
+      object: newFragment,
+      result: executionResult,
+    },
+  ]
+
+  const sanitizedMessages = sanitizeMessagesForStorage(storageMessages)
+
+  // --- Update Project in Database ---
+  const now = new Date().toISOString()
+  const newTitle = newFragment.title || project.title
+  const newDescription = newFragment.description || project.description
+
   const { error: updateError } = await supabase
     .from('projects')
     .update({
-      status: PROJECT_STATUSES.PENDING,
-      updated_at: new Date().toISOString(),
+      title: newTitle,
+      description: newDescription,
+      status: PROJECT_STATUSES.READY,
+      fragment: newFragment,
+      result: executionResult,
+      messages: sanitizedMessages,
+      updated_at: now,
     })
     .eq('id', project_id)
     .eq('user_id', user.userId)
 
   if (updateError) {
-    console.error('Failed to update project status:', updateError)
+    console.error('Failed to update project:', updateError)
     return createApiError('DATABASE_ERROR', 'Failed to update project', 500)
   }
 
-  // --- Start Background Processing ---
-  runInBackground(processProjectContinuation(project_id, user.userId, project, input))
+  console.log(`Project ${project_id} continued successfully`)
 
-  // --- Return Immediately ---
-  const response: AsyncProjectResponse = {
+  // --- Return Success Response ---
+  const response: SyncProjectResponse = {
     success: true,
     project: {
       id: project_id,
-      status: PROJECT_STATUSES.PENDING,
+      status: PROJECT_STATUSES.READY,
+      title: newTitle,
+      description: newDescription,
       created_at: project.created_at,
-      updated_at: new Date().toISOString(),
+      updated_at: now,
+      preview_url: previewUrl || '',
+      sandbox_id: executionResult.sbxId,
+      template: newFragment.template,
+      code: newFragment.code,
     },
   }
 
   return new Response(JSON.stringify(response), {
-    status: 202, // Accepted - processing asynchronously
+    status: 200,
     headers: { 'Content-Type': 'application/json' },
   })
 }

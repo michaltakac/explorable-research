@@ -15,13 +15,13 @@ export default function ProjectsApiPage() {
         </p>
       </div>
 
-      {/* Async API Note */}
-      <div className="rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/50 p-4">
-        <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Asynchronous Processing</h3>
-        <p className="text-sm text-blue-800 dark:text-blue-200">
-          The Create and Continue endpoints process requests asynchronously. They return immediately with a project ID and status,
-          while the actual processing (PDF parsing, AI generation, sandbox creation) happens in the background.
-          Use the Status endpoint to poll for completion, then retrieve full project details with the Get Project endpoint.
+      {/* Sync API Note */}
+      <div className="rounded-lg border border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/50 p-4">
+        <h3 className="font-semibold text-emerald-900 dark:text-emerald-100 mb-2">Synchronous Processing</h3>
+        <p className="text-sm text-emerald-800 dark:text-emerald-200">
+          The Create and Continue endpoints are synchronous - they wait for AI generation to complete before returning.
+          Responses include the full project data with preview URL and generated code. Typical response time is 30-120 seconds
+          depending on the complexity of the paper.
         </p>
       </div>
 
@@ -33,8 +33,8 @@ export default function ProjectsApiPage() {
         <EndpointCard
           method="POST"
           endpoint="/api/v1/projects/create"
-          title="Create a new project from a research paper (async)"
-          description="Initiates creation of a new interactive explorable from an ArXiv paper or uploaded PDF. Returns immediately with project ID and 'pending' status. Processing happens asynchronously - poll the status endpoint to track progress."
+          title="Create a new project from a research paper"
+          description="Creates a new interactive explorable from an ArXiv paper or uploaded PDF. This endpoint waits for AI generation to complete (up to 5 minutes) and returns the full project data including preview URL and generated code."
           parameters={[
             {
               name: 'arxiv_url',
@@ -82,7 +82,7 @@ export default function ProjectsApiPage() {
               name: 'template',
               type: 'string',
               required: false,
-              description: 'Template to use: "explorable-research-developer" (default) or "html-developer"',
+              description: 'Template to use: "explorable-research-developer" (default, React+Vite) or "html-developer" (static HTML)',
             },
           ]}
           requestExample={{
@@ -100,11 +100,18 @@ export default function ProjectsApiPage() {
   "success": true,
   "project": {
     "id": "abc123",
-    "status": "pending",
-    "created_at": "2024-01-15T10:30:00Z"
+    "status": "ready",
+    "title": "Gradient Descent Visualization",
+    "description": "Interactive visualization of gradient descent...",
+    "created_at": "2024-01-15T10:30:00Z",
+    "updated_at": "2024-01-15T10:31:30Z",
+    "preview_url": "https://sandbox.e2b.dev/...",
+    "sandbox_id": "sbx-abc123",
+    "template": "explorable-research-developer",
+    "code": "import React from 'react';..."
   }
 }`,
-            title: 'Response (202 Accepted)',
+            title: 'Response (200 OK)',
           }}
         >
           <ApiPlayground
@@ -128,8 +135,8 @@ export default function ProjectsApiPage() {
         <EndpointCard
           method="GET"
           endpoint="/api/v1/projects/:project_id/status"
-          title="Check project processing status"
-          description="Returns the current status of a project. Use this to poll for completion after creating or continuing a project. Status progresses: pending → processing_pdf → generating → creating_sandbox → ready (or failed)."
+          title="Get current project status and data"
+          description="Returns the current status and data of a project. Useful for checking project details without fetching the full conversation history."
           parameters={[
             {
               name: 'project_id',
@@ -144,19 +151,7 @@ export default function ProjectsApiPage() {
   -H "x-api-key: YOUR_API_KEY"`,
           }}
           responseExample={{
-            code: `// Processing...
-{
-  "success": true,
-  "project": {
-    "id": "abc123",
-    "status": "generating",
-    "created_at": "2024-01-15T10:30:00Z",
-    "updated_at": "2024-01-15T10:30:15Z"
-  }
-}
-
-// When ready:
-{
+            code: `{
   "success": true,
   "project": {
     "id": "abc123",
@@ -166,19 +161,9 @@ export default function ProjectsApiPage() {
     "created_at": "2024-01-15T10:30:00Z",
     "updated_at": "2024-01-15T10:31:00Z",
     "preview_url": "https://sandbox.e2b.dev/...",
-    "sandbox_id": "sbx-abc123"
-  }
-}
-
-// If failed:
-{
-  "success": true,
-  "project": {
-    "id": "abc123",
-    "status": "failed",
-    "created_at": "2024-01-15T10:30:00Z",
-    "updated_at": "2024-01-15T10:30:30Z",
-    "error_message": "Failed to process PDF"
+    "sandbox_id": "sbx-abc123",
+    "template": "explorable-research-developer",
+    "code": "import React from 'react';..."
   }
 }`,
           }}
@@ -203,8 +188,8 @@ export default function ProjectsApiPage() {
         <EndpointCard
           method="POST"
           endpoint="/api/v1/projects/:project_id/continue"
-          title="Continue an existing project with new instructions (async)"
-          description="Initiates adding new instructions to an existing project. Returns immediately with 'pending' status. The project must be in 'ready' status to continue. Processing reuses the existing sandbox when possible."
+          title="Continue an existing project with new instructions"
+          description="Adds new instructions to an existing project and regenerates the visualization. This endpoint waits for AI generation to complete and returns the updated project data. The project must be in 'ready' status to continue."
           parameters={[
             {
               name: 'project_id',
@@ -251,12 +236,18 @@ export default function ProjectsApiPage() {
   "success": true,
   "project": {
     "id": "abc123",
-    "status": "pending",
+    "status": "ready",
+    "title": "Gradient Descent Visualization",
+    "description": "Interactive visualization with controls...",
     "created_at": "2024-01-15T10:30:00Z",
-    "updated_at": "2024-01-15T11:45:00Z"
+    "updated_at": "2024-01-15T11:46:30Z",
+    "preview_url": "https://sandbox.e2b.dev/...",
+    "sandbox_id": "sbx-abc123",
+    "template": "explorable-research-developer",
+    "code": "import React from 'react';..."
   }
 }`,
-            title: 'Response (202 Accepted)',
+            title: 'Response (200 OK)',
           }}
         >
           <ApiPlayground
@@ -336,7 +327,7 @@ export default function ProjectsApiPage() {
           method="GET"
           endpoint="/api/projects/:project_id"
           title="Get a specific project"
-          description="Retrieves detailed information about a specific project, including the generated code and conversation history. Use this after the project status is 'ready' to get all project details."
+          description="Retrieves detailed information about a specific project, including the generated code, fragment data, and conversation history."
           parameters={[
             {
               name: 'project_id',
@@ -362,7 +353,7 @@ export default function ProjectsApiPage() {
       "title": "Gradient Descent Visualization",
       "description": "...",
       "code": "import React from 'react';...",
-      "file_path": "App.tsx",
+      "file_path": "src/App.tsx",
       "template": "explorable-research-developer"
     },
     "result": {
@@ -446,7 +437,6 @@ export default function ProjectsApiPage() {
               <pre className="text-sm overflow-x-auto">
                 <code>{`import requests
 import base64
-import time
 
 API_KEY = "your_api_key_here"
 BASE_URL = "https://explorableresearch.com"
@@ -456,61 +446,55 @@ headers = {
     "Content-Type": "application/json"
 }
 
-def wait_for_project(project_id, timeout=300, poll_interval=2):
-    """Poll project status until ready or failed"""
-    start_time = time.time()
-    while time.time() - start_time < timeout:
-        response = requests.get(
-            f"{BASE_URL}/api/v1/projects/{project_id}/status",
-            headers=headers
-        )
-        data = response.json()
-        status = data["project"]["status"]
-
-        if status == "ready":
-            return data["project"]
-        elif status == "failed":
-            raise Exception(f"Project failed: {data['project'].get('error_message')}")
-
-        print(f"Status: {status}...")
-        time.sleep(poll_interval)
-
-    raise TimeoutError("Project processing timed out")
-
-# Create a project from an ArXiv paper
+# Create a project from an ArXiv paper (synchronous - waits for completion)
 response = requests.post(
     f"{BASE_URL}/api/v1/projects/create",
     headers=headers,
     json={
         "arxiv_url": "https://arxiv.org/abs/2301.00001",
         "instruction": "Focus on visualizing the key algorithm"
-    }
+    },
+    timeout=300  # 5 minute timeout for AI generation
 )
-project_id = response.json()["project"]["id"]
-print(f"Created project: {project_id}")
-
-# Wait for processing to complete
-project = wait_for_project(project_id)
-print(f"Ready! Preview: {project['preview_url']}")
+project = response.json()["project"]
+print(f"Created project: {project['id']}")
+print(f"Preview URL: {project['preview_url']}")
 
 # Get full project details including code
 response = requests.get(
-    f"{BASE_URL}/api/projects/{project_id}",
+    f"{BASE_URL}/api/projects/{project['id']}",
     headers=headers
 )
 full_project = response.json()["project"]
 print(f"Code: {full_project['fragment']['code'][:100]}...")
 
-# Continue the project
+# Continue the project with new instructions (synchronous)
 response = requests.post(
-    f"{BASE_URL}/api/v1/projects/{project_id}/continue",
+    f"{BASE_URL}/api/v1/projects/{project['id']}/continue",
     headers=headers,
-    json={"instruction": "Add a slider to control parameters"}
+    json={"instruction": "Add a slider to control parameters"},
+    timeout=300
 )
+updated_project = response.json()["project"]
+print(f"Updated preview: {updated_project['preview_url']}")
 
-# Wait for continuation to complete
-updated_project = wait_for_project(project_id)
-print(f"Updated preview: {updated_project['preview_url']}")`}</code>
+# Create from local PDF
+with open("paper.pdf", "rb") as f:
+    pdf_base64 = base64.b64encode(f.read()).decode()
+
+response = requests.post(
+    f"{BASE_URL}/api/v1/projects/create",
+    headers=headers,
+    json={
+        "pdf_file": pdf_base64,
+        "pdf_filename": "paper.pdf",
+        "template": "html-developer",  # Use static HTML template
+        "instruction": "Create an interactive explanation"
+    },
+    timeout=300
+)
+html_project = response.json()["project"]
+print(f"HTML project: {html_project['preview_url']}")`}</code>
               </pre>
             </div>
           </div>
@@ -527,50 +511,23 @@ const headers = {
   "Content-Type": "application/json",
 };
 
-// Poll for project completion
-async function waitForProject(
-  projectId: string,
-  timeout = 300000,
-  pollInterval = 2000
-): Promise<any> {
-  const startTime = Date.now();
-
-  while (Date.now() - startTime < timeout) {
-    const response = await fetch(
-      \`\${BASE_URL}/api/v1/projects/\${projectId}/status\`,
-      { headers: { "x-api-key": API_KEY } }
-    );
-    const data = await response.json();
-    const status = data.project.status;
-
-    if (status === "ready") {
-      return data.project;
-    } else if (status === "failed") {
-      throw new Error(\`Project failed: \${data.project.error_message}\`);
-    }
-
-    console.log(\`Status: \${status}...\`);
-    await new Promise(resolve => setTimeout(resolve, pollInterval));
-  }
-
-  throw new Error("Project processing timed out");
-}
-
-// Create a project from an ArXiv paper
+// Create a project from an ArXiv paper (synchronous)
 async function createFromArxiv(arxivUrl: string, instruction?: string) {
   const response = await fetch(\`\${BASE_URL}/api/v1/projects/create\`, {
     method: "POST",
     headers,
     body: JSON.stringify({ arxiv_url: arxivUrl, instruction }),
   });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || "Failed to create project");
+  }
+
   const { project } = await response.json();
   console.log(\`Created project: \${project.id}\`);
-
-  // Wait for processing
-  const readyProject = await waitForProject(project.id);
-  console.log(\`Preview: \${readyProject.preview_url}\`);
-
-  return readyProject;
+  console.log(\`Preview: \${project.preview_url}\`);
+  return project;
 }
 
 // Get full project details
@@ -581,7 +538,7 @@ async function getProject(projectId: string) {
   return response.json();
 }
 
-// Continue an existing project
+// Continue an existing project (synchronous)
 async function continueProject(projectId: string, instruction: string) {
   const response = await fetch(
     \`\${BASE_URL}/api/v1/projects/\${projectId}/continue\`,
@@ -591,10 +548,13 @@ async function continueProject(projectId: string, instruction: string) {
       body: JSON.stringify({ instruction }),
     }
   );
-  await response.json();
 
-  // Wait for continuation to complete
-  return waitForProject(projectId);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || "Failed to continue project");
+  }
+
+  return response.json();
 }
 
 // List all projects
@@ -603,7 +563,19 @@ async function listProjects() {
     headers: { "x-api-key": API_KEY },
   });
   return response.json();
-}`}</code>
+}
+
+// Example usage
+const project = await createFromArxiv(
+  "https://arxiv.org/abs/1706.03762",
+  "Visualize the Transformer attention mechanism"
+);
+
+const updated = await continueProject(
+  project.id,
+  "Add an interactive slider to control the number of attention heads"
+);
+console.log(\`Updated: \${updated.project.preview_url}\`);`}</code>
               </pre>
             </div>
           </div>

@@ -1,279 +1,277 @@
-# API Project Creation Feature - Implementation Plan
+# API v1 Project Endpoints - Documentation
 
 ## Overview
 
-This feature enables external services to create and manage Explorable Research projects through a REST API using API keys for authentication. The API provides a complete pipeline from PDF/ArXiv input to sandbox-ready interactive visualization.
+The API v1 provides synchronous endpoints for creating and managing Explorable Research projects. All endpoints wait for AI generation to complete before returning results.
 
-## Feature Scope
+**Authentication**: All endpoints require an API key via `x-api-key` header.
 
-### Endpoint 1: `POST /api/v1/projects/create`
+## Endpoints
 
-Creates a new project from research paper input (PDF or ArXiv link) and generates an interactive visualization.
+### 1. `POST /api/v1/projects/create`
 
-#### Input Parameters
+Creates a new project from a research paper (PDF or ArXiv URL) and generates an interactive visualization. This is a **synchronous** endpoint - it waits for AI generation to complete (up to 5 minutes).
+
+#### Request
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `arxiv_url` | string | Either arxiv_url or pdf_file | ArXiv paper URL or ID |
 | `pdf_file` | base64 string | Either arxiv_url or pdf_file | Base64-encoded PDF file |
 | `pdf_filename` | string | Required with pdf_file | Filename for the PDF |
-| `images` | array | No | Array of base64-encoded image files |
-| `instruction` | string | No | Custom instruction/prompt for the LLM |
-| `template` | string | No | Template to use (`html-developer` or `explorable-research-developer`). Default: `explorable-research-developer` |
-| `model` | string | No | LLM model ID from models.json (e.g., `google/gemini-3-pro-preview:online`). Default: server default |
+| `images` | array | No | Array of image attachments |
+| `images[].data` | string | Yes | Base64-encoded image data |
+| `images[].mimeType` | string | Yes | MIME type (image/png, image/jpeg, etc.) |
+| `images[].filename` | string | No | Optional filename |
+| `instruction` | string | No | Custom instruction for the LLM |
+| `template` | string | No | `html-developer` or `explorable-research-developer` (default) |
+| `model` | string | No | LLM model ID from models.json |
 | `model_config` | object | No | LLM configuration options |
 | `model_config.temperature` | number | No | Temperature (0-2) |
 | `model_config.topP` | number | No | Top P (0-1) |
 | `model_config.topK` | number | No | Top K |
 | `model_config.maxTokens` | number | No | Max tokens |
-| `model_config.frequencyPenalty` | number | No | Frequency penalty |
-| `model_config.presencePenalty` | number | No | Presence penalty |
-| `include_code` | boolean | No | Include generated code in response. Default: false |
-| `include_messages` | boolean | No | Include all chat messages in response. Default: false |
 
-#### Output Response
+#### Response (200 OK)
 
 ```json
 {
   "success": true,
   "project": {
     "id": "uuid",
+    "status": "ready",
     "title": "Project Title",
     "description": "Project description",
-    "created_at": "ISO timestamp",
+    "created_at": "2024-01-15T10:30:00.000Z",
+    "updated_at": "2024-01-15T10:30:00.000Z",
     "preview_url": "https://sandbox-url.e2b.dev",
     "sandbox_id": "sbx_xxx",
     "template": "explorable-research-developer",
-    "fragment": { /* Full fragment schema - optional */ },
-    "code": "string /* Generated code - optional, only if include_code=true */",
-    "messages": [ /* Message history - optional, only if include_messages=true */ ]
+    "code": "// Generated code..."
   }
 }
 ```
 
 #### Error Responses
 
-- `400 Bad Request` - Invalid input parameters
-- `401 Unauthorized` - Missing or invalid API key
-- `413 Payload Too Large` - PDF exceeds size limit
-- `422 Unprocessable Entity` - Failed to process PDF/ArXiv
-- `429 Too Many Requests` - Rate limit exceeded
-- `500 Internal Server Error` - Server error
+| Status | Code | Description |
+|--------|------|-------------|
+| 400 | VALIDATION_ERROR | Invalid input parameters |
+| 400 | INVALID_PDF | Invalid base64-encoded PDF |
+| 400 | PDF_TOO_LARGE | PDF exceeds 10MB limit |
+| 400 | ARXIV_ERROR | Failed to process ArXiv URL |
+| 401 | UNAUTHORIZED | Missing or invalid API key |
+| 429 | RATE_LIMIT_EXCEEDED | Rate limit exceeded |
+| 500 | GENERATION_FAILED | AI generation failed |
+| 500 | SANDBOX_FAILED | Sandbox creation failed |
 
-### Endpoint 2: `POST /api/v1/projects/{project_id}/continue`
+---
 
-Continues an existing project by adding new instructions and regenerating the visualization.
+### 2. `GET /api/v1/projects/{project_id}/status`
 
-#### Input Parameters
+Returns the current status and data of a project.
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `instruction` | string | Yes | Additional instruction/modification request |
-| `images` | array | No | Additional images to include |
-| `model` | string | No | Override model for this request |
-| `model_config` | object | No | Override model config for this request |
-| `include_code` | boolean | No | Include code in response. Default: false |
-| `include_messages` | boolean | No | Include all messages in response. Default: false |
-
-#### Output Response
+#### Response (200 OK)
 
 ```json
 {
   "success": true,
   "project": {
     "id": "uuid",
-    "title": "Updated Project Title",
-    "description": "Updated description",
-    "updated_at": "ISO timestamp",
-    "preview_url": "https://new-sandbox-url.e2b.dev",
+    "status": "ready",
+    "title": "Project Title",
+    "description": "Project description",
+    "created_at": "2024-01-15T10:30:00.000Z",
+    "updated_at": "2024-01-15T10:30:00.000Z",
+    "preview_url": "https://sandbox-url.e2b.dev",
     "sandbox_id": "sbx_xxx",
     "template": "explorable-research-developer",
-    "fragment": { /* Updated fragment - optional */ },
-    "code": "string /* Updated code - optional, only if include_code=true */",
-    "messages": [ /* All messages including new ones - optional */ ]
+    "code": "// Generated code..."
   }
 }
 ```
 
-## Implementation Details
+#### Error Responses
 
-### 1. Input Validation Schema (`lib/api-v1-schemas.ts`)
+| Status | Code | Description |
+|--------|------|-------------|
+| 401 | UNAUTHORIZED | Missing or invalid API key |
+| 404 | NOT_FOUND | Project not found |
 
-Create Zod schemas for validating API input:
+---
 
-```typescript
-import { z } from 'zod'
-import models from './models.json'
+### 3. `POST /api/v1/projects/{project_id}/continue`
 
-const validModelIds = models.models.map(m => m.id)
+Continues an existing project with new instructions. This is a **synchronous** endpoint - it waits for AI generation to complete.
 
-export const modelConfigSchema = z.object({
-  temperature: z.number().min(0).max(2).optional(),
-  topP: z.number().min(0).max(1).optional(),
-  topK: z.number().positive().optional(),
-  maxTokens: z.number().positive().optional(),
-  frequencyPenalty: z.number().optional(),
-  presencePenalty: z.number().optional(),
-}).optional()
+#### Request
 
-export const createProjectSchema = z.object({
-  arxiv_url: z.string().optional(),
-  pdf_file: z.string().optional(), // base64
-  pdf_filename: z.string().optional(),
-  images: z.array(z.object({
-    data: z.string(), // base64
-    mimeType: z.string(),
-    filename: z.string().optional(),
-  })).optional(),
-  instruction: z.string().optional(),
-  template: z.enum(['html-developer', 'explorable-research-developer']).default('explorable-research-developer'),
-  model: z.string().refine(id => validModelIds.includes(id)).optional(),
-  model_config: modelConfigSchema,
-  include_code: z.boolean().default(false),
-  include_messages: z.boolean().default(false),
-}).refine(
-  data => data.arxiv_url || data.pdf_file,
-  { message: 'Either arxiv_url or pdf_file must be provided' }
-).refine(
-  data => !data.pdf_file || data.pdf_filename,
-  { message: 'pdf_filename is required when pdf_file is provided' }
-)
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `instruction` | string | Yes | New instruction for modifications |
+| `images` | array | No | Additional images to include |
+| `model` | string | No | Override model for this request |
+| `model_config` | object | No | Override model config for this request |
 
-export const continueProjectSchema = z.object({
-  instruction: z.string().min(1, 'Instruction is required'),
-  images: z.array(z.object({
-    data: z.string(),
-    mimeType: z.string(),
-    filename: z.string().optional(),
-  })).optional(),
-  model: z.string().refine(id => validModelIds.includes(id)).optional(),
-  model_config: modelConfigSchema,
-  include_code: z.boolean().default(false),
-  include_messages: z.boolean().default(false),
-})
+#### Response (200 OK)
+
+```json
+{
+  "success": true,
+  "project": {
+    "id": "uuid",
+    "status": "ready",
+    "title": "Updated Project Title",
+    "description": "Updated description",
+    "created_at": "2024-01-15T10:30:00.000Z",
+    "updated_at": "2024-01-15T10:35:00.000Z",
+    "preview_url": "https://new-sandbox-url.e2b.dev",
+    "sandbox_id": "sbx_xxx",
+    "template": "explorable-research-developer",
+    "code": "// Updated code..."
+  }
+}
 ```
 
-### 2. API Route Files
+#### Error Responses
 
-#### `app/api/v1/projects/create/route.ts`
+| Status | Code | Description |
+|--------|------|-------------|
+| 400 | VALIDATION_ERROR | Invalid input (e.g., missing instruction) |
+| 401 | UNAUTHORIZED | Missing or invalid API key |
+| 404 | NOT_FOUND | Project not found |
+| 409 | PROJECT_NOT_READY | Project is not in ready state |
+| 500 | GENERATION_FAILED | AI generation failed |
 
-Main endpoint for project creation. Flow:
-1. Authenticate via API key
-2. Validate input with Zod schema
-3. Process ArXiv URL or PDF file
-4. Build message array with PDF/images
-5. Generate fragment using `streamObject` (non-streaming for API)
-6. Create E2B sandbox
-7. Save project to database
-8. Return result
+---
 
-#### `app/api/v1/projects/[project_id]/continue/route.ts`
+### 4. `GET /api/projects/{project_id}`
 
-Endpoint for continuing projects. Flow:
-1. Authenticate via API key
-2. Validate input
-3. Fetch existing project with messages
-4. Append new instruction/images to messages
-5. Generate new fragment (using existing code as context)
-6. Create new sandbox (or update existing)
-7. Update project in database
-8. Return result
+Returns full project data including fragment and messages.
 
-### 3. Helper Functions
+#### Response (200 OK)
 
-#### ArXiv Processing (reuse from `/api/arxiv`)
-
-```typescript
-// lib/arxiv.ts - Extract ArXiv ID and download PDF
-export async function processArxivUrl(url: string, userId: string, supabase: SupabaseClient): Promise<{
-  arxivId: string
-  title: string
-  abstract: string
-  storagePath?: string
-  pdfBase64?: string
-}>
+```json
+{
+  "project": {
+    "id": "uuid",
+    "title": "Project Title",
+    "description": "Project description",
+    "status": "ready",
+    "fragment": { /* Full fragment schema */ },
+    "result": { /* Execution result with sandbox info */ },
+    "messages": [ /* Conversation history */ ],
+    "created_at": "2024-01-15T10:30:00.000Z",
+    "updated_at": "2024-01-15T10:30:00.000Z"
+  }
+}
 ```
 
-#### Fragment Generation Helper
+---
 
-```typescript
-// lib/fragment-generator.ts
-export async function generateFragment(
-  messages: CoreMessage[],
-  template: Templates,
-  model: LLMModel,
-  config: LLMModelConfig
-): Promise<FragmentSchema>
+### 5. `DELETE /api/projects/{project_id}`
+
+Deletes a project and its associated sandbox.
+
+#### Response
+
+- **204 No Content**: Project deleted successfully
+- **404 Not Found**: Project not found
+
+---
+
+## Project Statuses
+
+| Status | Description |
+|--------|-------------|
+| `ready` | Project is complete and preview is available |
+| `failed` | Project creation/update failed |
+
+---
+
+## Usage Examples
+
+### Create Project from ArXiv
+
+```bash
+curl -X POST http://localhost:3001/api/v1/projects/create \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "arxiv_url": "https://arxiv.org/abs/1706.03762",
+    "instruction": "Create an interactive visualization of the Transformer architecture",
+    "template": "explorable-research-developer"
+  }'
 ```
 
-#### Sandbox Creation Helper (reuse logic from `/api/sandbox`)
+### Create Project from PDF (html-developer template)
 
-```typescript
-// lib/sandbox.ts
-export async function createSandboxFromFragment(
-  fragment: FragmentSchema,
-  userId: string
-): Promise<ExecutionResult>
+```bash
+# First, encode your PDF to base64
+PDF_BASE64=$(base64 -i paper.pdf)
+
+curl -X POST http://localhost:3001/api/v1/projects/create \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"pdf_file\": \"$PDF_BASE64\",
+    \"pdf_filename\": \"paper.pdf\",
+    \"template\": \"html-developer\",
+    \"instruction\": \"Create an interactive HTML page explaining the key concepts\"
+  }"
 ```
 
-### 4. Authentication & Rate Limiting
+### Get Project Status
 
-- Use existing API key authentication from `lib/supabase-server.ts`
-- Apply rate limiting (configurable, default 100 requests/day for API)
-- Add new environment variable: `API_V1_RATE_LIMIT=100`
+```bash
+curl -X GET http://localhost:3001/api/v1/projects/PROJECT_ID/status \
+  -H "x-api-key: YOUR_API_KEY"
+```
 
-### 5. Database Updates
+### Continue a Project
 
-No schema changes needed - uses existing `projects` table:
-- `id`, `user_id`, `title`, `description`, `fragment`, `result`, `messages`, `created_at`
+```bash
+curl -X POST http://localhost:3001/api/v1/projects/PROJECT_ID/continue \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "instruction": "Add an interactive slider to control animation speed"
+  }'
+```
 
-Consider adding `updated_at` column for continue operations.
+### Delete a Project
 
-### 6. Testing Plan
+```bash
+curl -X DELETE http://localhost:3001/api/projects/PROJECT_ID \
+  -H "x-api-key: YOUR_API_KEY"
+```
 
-#### Unit Tests (`lib/__tests__/api-v1-schemas.test.ts`)
+---
 
-- Schema validation tests
-- Model ID validation
-- Required field combinations
+## Templates
 
-#### Integration Tests (`lib/__tests__/api-v1-integration.test.ts`)
+| Template ID | Description | Output |
+|-------------|-------------|--------|
+| `explorable-research-developer` | React + Vite + Three.js | Modern SPA with 3D capabilities |
+| `html-developer` | Static HTML + TailwindCSS + vanilla JS | No-build static site |
 
-- Mock Supabase and E2B
-- Test full create flow
-- Test continue flow
-- Test error cases
+---
 
-### 7. Implementation Steps
+## Rate Limiting
 
-1. **Phase 1: Core Infrastructure**
-   - [ ] Create Zod validation schemas
-   - [ ] Extract ArXiv processing to reusable module
-   - [ ] Extract fragment generation to reusable module
-   - [ ] Extract sandbox creation to reusable module
+Default: 10 requests per day per user. Configure via environment variables:
+- `RATE_LIMIT_MAX_REQUESTS`: Max requests per window
+- `RATE_LIMIT_WINDOW`: Time window (e.g., `1d`, `1h`)
 
-2. **Phase 2: Create Endpoint**
-   - [ ] Implement `POST /api/v1/projects/create`
-   - [ ] Handle ArXiv URL processing
-   - [ ] Handle PDF file upload
-   - [ ] Handle image attachments
-   - [ ] Integrate with fragment generation
-   - [ ] Integrate with sandbox creation
-   - [ ] Save project to database
+---
 
-3. **Phase 3: Continue Endpoint**
-   - [ ] Implement `POST /api/v1/projects/[project_id]/continue`
-   - [ ] Fetch existing project
-   - [ ] Append new messages
-   - [ ] Regenerate fragment
-   - [ ] Update sandbox
-   - [ ] Update project in database
+## Timeouts
 
-4. **Phase 4: Testing & Polish**
-   - [ ] Write unit tests
-   - [ ] Write integration tests
-   - [ ] Add OpenAPI documentation
-   - [ ] Add rate limiting
+- **Request timeout**: 5 minutes (`maxDuration = 300`)
+- **AI generation**: Typically 30-120 seconds
+- **Sandbox creation**: Up to 60 seconds
+
+---
 
 ## File Structure
 
@@ -283,76 +281,38 @@ app/api/v1/
 │   ├── create/
 │   │   └── route.ts          # POST /api/v1/projects/create
 │   └── [project_id]/
+│       ├── status/
+│       │   └── route.ts      # GET /api/v1/projects/{id}/status
 │       └── continue/
-│           └── route.ts      # POST /api/v1/projects/[project_id]/continue
+│           └── route.ts      # POST /api/v1/projects/{id}/continue
+
+app/api/projects/
+└── [project_id]/
+    └── route.ts              # GET/DELETE /api/projects/{id}
 
 lib/
 ├── api-v1-schemas.ts         # Zod validation schemas
 ├── arxiv.ts                  # ArXiv processing utilities
 ├── fragment-generator.ts     # Fragment generation helper
-├── sandbox.ts                # Sandbox creation helper (extract from route)
+├── sandbox.ts                # Sandbox creation helper
 └── __tests__/
-    ├── api-v1-schemas.test.ts
     └── api-v1-integration.test.ts
 ```
 
-## API Usage Examples
+---
 
-### Create Project from ArXiv
+## Implementation Status
 
-```bash
-curl -X POST https://api.explorable.research/api/v1/projects/create \
-  -H "x-api-key: your-api-key" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "arxiv_url": "https://arxiv.org/abs/2301.00001",
-    "instruction": "Focus on the visualization of the main algorithm",
-    "template": "explorable-research-developer",
-    "model": "anthropic/claude-sonnet-4.5:online",
-    "include_code": true
-  }'
-```
+All features are complete and tested:
 
-### Create Project from PDF
-
-```bash
-curl -X POST https://api.explorable.research/api/v1/projects/create \
-  -H "x-api-key: your-api-key" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "pdf_file": "base64-encoded-pdf-content",
-    "pdf_filename": "research-paper.pdf",
-    "images": [{
-      "data": "base64-encoded-image",
-      "mimeType": "image/png"
-    }],
-    "instruction": "Create an interactive diagram of Figure 3"
-  }'
-```
-
-### Continue Existing Project
-
-```bash
-curl -X POST https://api.explorable.research/api/v1/projects/abc123/continue \
-  -H "x-api-key: your-api-key" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "instruction": "Add a slider to control the animation speed",
-    "include_messages": true
-  }'
-```
-
-## Security Considerations
-
-1. **API Key Validation**: All endpoints require valid API key
-2. **Rate Limiting**: Prevent abuse with configurable limits
-3. **Input Sanitization**: Validate all input with Zod schemas
-4. **File Size Limits**: Enforce PDF/image size limits
-5. **User Isolation**: Projects only accessible by owning user
-
-## Performance Considerations
-
-1. **Async Generation**: Fragment generation takes 30-90 seconds
-2. **Timeout**: Set `maxDuration = 300` (5 minutes) for long requests
-3. **Sandbox Timeout**: E2B sandbox timeout of 10 minutes
-4. **Response Streaming**: Consider SSE for progress updates (future enhancement)
+- [x] Synchronous create endpoint (POST /api/v1/projects/create)
+- [x] Synchronous continue endpoint (POST /api/v1/projects/{id}/continue)
+- [x] Status endpoint (GET /api/v1/projects/{id}/status)
+- [x] Project CRUD (GET/DELETE /api/projects/{id})
+- [x] ArXiv URL processing
+- [x] PDF file upload
+- [x] Image attachments
+- [x] Both templates (explorable-research-developer, html-developer)
+- [x] API key authentication
+- [x] Rate limiting
+- [x] Integration tests

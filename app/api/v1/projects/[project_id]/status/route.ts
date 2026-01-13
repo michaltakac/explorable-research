@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { createSupabaseFromRequest, verifyUser } from '@/lib/supabase-server'
 import {
   createApiError,
-  ProjectStatusResponse,
+  SyncProjectResponse,
   PROJECT_STATUSES,
   ProjectStatus,
 } from '@/lib/api-v1-schemas'
@@ -11,8 +11,9 @@ import { getPreviewUrl } from '@/lib/sandbox'
 import ratelimit from '@/lib/ratelimit'
 import { Duration } from '@/lib/duration'
 import { ExecutionResult } from '@/lib/types'
+import { FragmentSchema } from '@/lib/schema'
 
-// Rate limiting configuration - uses same env vars as other endpoints
+// Rate limiting configuration
 const rateLimitMaxRequests = process.env.RATE_LIMIT_MAX_REQUESTS
   ? parseInt(process.env.RATE_LIMIT_MAX_REQUESTS)
   : 10
@@ -26,7 +27,7 @@ type ProjectData = {
   description: string | null
   status: string
   result: ExecutionResult | null
-  error_message: string | null
+  fragment: FragmentSchema | null
   created_at: string
   updated_at: string | null
 }
@@ -67,10 +68,10 @@ export async function GET(
     return createRateLimitResponse(limit)
   }
 
-  // --- Fetch Project Status ---
+  // --- Fetch Project ---
   const { data: projectData, error: projectError } = await supabase
     .from('projects')
-    .select('id, title, description, status, result, error_message, created_at, updated_at')
+    .select('id, title, description, status, result, fragment, created_at, updated_at')
     .eq('id', project_id)
     .eq('user_id', user.userId)
     .single()
@@ -80,30 +81,30 @@ export async function GET(
   }
 
   const project = projectData as ProjectData
+  const status = project.status as ProjectStatus
 
   // Get preview URL if project is ready and has result
-  let previewUrl: string | undefined
-  let sandboxId: string | undefined
-  if (project.status === PROJECT_STATUSES.READY && project.result) {
-    previewUrl = getPreviewUrl(project.result) || undefined
-    sandboxId = project.result.sbxId
+  let previewUrl = ''
+  let sandboxId = ''
+  if (status === PROJECT_STATUSES.READY && project.result) {
+    previewUrl = getPreviewUrl(project.result) || ''
+    sandboxId = project.result.sbxId || ''
   }
 
   // --- Build Response ---
-  const response: ProjectStatusResponse = {
+  const response: SyncProjectResponse = {
     success: true,
     project: {
       id: project.id,
-      status: project.status as ProjectStatus,
+      status,
+      title: project.title || 'Untitled Project',
+      description: project.description,
       created_at: project.created_at,
-      updated_at: project.updated_at || undefined,
-      ...(project.title && { title: project.title }),
-      ...(project.description && { description: project.description }),
-      ...(previewUrl && { preview_url: previewUrl }),
-      ...(sandboxId && { sandbox_id: sandboxId }),
-      ...(project.status === PROJECT_STATUSES.FAILED && project.error_message && {
-        error_message: project.error_message,
-      }),
+      updated_at: project.updated_at || project.created_at,
+      preview_url: previewUrl,
+      sandbox_id: sandboxId,
+      template: project.fragment?.template || '',
+      code: project.fragment?.code,
     },
   }
 

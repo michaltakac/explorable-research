@@ -5,13 +5,10 @@ import modelsJson from './models.json'
 const validModelIds = modelsJson.models.map((m) => m.id)
 
 /**
- * Project status values for async pipeline tracking
+ * Project status values
+ * Simplified for synchronous processing
  */
 export const PROJECT_STATUSES = {
-  PENDING: 'pending',
-  PROCESSING_PDF: 'processing_pdf',
-  GENERATING: 'generating',
-  CREATING_SANDBOX: 'creating_sandbox',
   READY: 'ready',
   FAILED: 'failed',
 } as const
@@ -45,7 +42,7 @@ export const imageAttachmentSchema = z.object({
 
 /**
  * Schema for POST /api/v1/projects/create
- * Returns immediately with project ID and status - processing happens asynchronously
+ * Synchronous endpoint - waits for AI generation and returns complete project data
  */
 export const createProjectSchema = z
   .object({
@@ -83,7 +80,7 @@ export type CreateProjectInput = z.infer<typeof createProjectSchema>
 
 /**
  * Schema for POST /api/v1/projects/[project_id]/continue
- * Returns immediately with updated status - processing happens asynchronously
+ * Synchronous endpoint - waits for AI generation and returns updated project data
  */
 export const continueProjectSchema = z.object({
   // Required instruction for continuation
@@ -105,34 +102,22 @@ export const continueProjectSchema = z.object({
 export type ContinueProjectInput = z.infer<typeof continueProjectSchema>
 
 /**
- * Async response for project creation/continuation
- * Returns immediately with project ID and status
+ * Synchronous response for project creation/continuation
+ * Returns full project data after processing completes
  */
-export type AsyncProjectResponse = {
+export type SyncProjectResponse = {
   success: true
   project: {
     id: string
     status: ProjectStatus
+    title: string
+    description: string | null
     created_at: string
-    updated_at?: string
-  }
-}
-
-/**
- * Response for project status endpoint
- */
-export type ProjectStatusResponse = {
-  success: true
-  project: {
-    id: string
-    status: ProjectStatus
-    title?: string
-    description?: string
-    created_at: string
-    updated_at?: string
-    preview_url?: string
-    sandbox_id?: string
-    error_message?: string
+    updated_at: string
+    preview_url: string
+    sandbox_id: string
+    template: string
+    code?: string | Array<{ file_path: string; file_content: string }>
   }
 }
 
