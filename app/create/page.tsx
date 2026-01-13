@@ -58,6 +58,7 @@ function CreatePageContent() {
   const [fragment, setFragment] = useState<DeepPartial<FragmentSchema>>()
   const [currentTab, setCurrentTab] = useState<'code' | 'fragment'>('code')
   const [isPreviewLoading, setIsPreviewLoading] = useState(false)
+  const [isPreviewExpanded, setIsPreviewExpanded] = useState(false)
   const [isAuthDialogOpen, setAuthDialog] = useState(false)
   const [authView, setAuthView] = useState<ViewType>('sign_in')
   const [isRateLimited, setIsRateLimited] = useState(false)
@@ -461,8 +462,15 @@ function CreatePageContent() {
           />
         )}
         <div className="grid w-full md:grid-cols-2">
+          {/* Chat panel - hidden when preview is expanded */}
           <div
-            className={`flex flex-col w-full max-h-full max-w-[800px] mx-auto px-4 overflow-auto ${fragment ? 'col-span-1' : 'col-span-2'}`}
+            className={`flex flex-col w-full max-h-full max-w-[800px] mx-auto px-4 overflow-auto ${
+              isPreviewExpanded 
+                ? 'hidden' 
+                : fragment 
+                  ? 'col-span-1' 
+                  : 'col-span-2'
+            }`}
           >
             <NavBar
               session={session}
@@ -506,15 +514,23 @@ function CreatePageContent() {
               />
             </ChatInput>
           </div>
-          <Preview
-            selectedTab={currentTab}
-            onSelectedTabChange={setCurrentTab}
-            isChatLoading={isLoading}
-            isPreviewLoading={isPreviewLoading}
-            fragment={fragment}
-            result={result as ExecutionResult}
-            onClose={() => setFragment(undefined)}
-          />
+          {/* Preview panel - takes full width when expanded */}
+          <div className={isPreviewExpanded ? 'col-span-2' : ''}>
+            <Preview
+              selectedTab={currentTab}
+              onSelectedTabChange={setCurrentTab}
+              isChatLoading={isLoading}
+              isPreviewLoading={isPreviewLoading}
+              fragment={fragment}
+              result={result as ExecutionResult}
+              onClose={() => {
+                setFragment(undefined)
+                setIsPreviewExpanded(false)
+              }}
+              isExpanded={isPreviewExpanded}
+              onToggleExpand={() => setIsPreviewExpanded(!isPreviewExpanded)}
+            />
+          </div>
         </div>
       </main>
     )

@@ -21,7 +21,7 @@ import {
 } from '@radix-ui/react-icons'
 import { Session } from '@supabase/supabase-js'
 import { track } from '@vercel/analytics'
-import { BookImage, CircleUser, Key, LogOut } from 'lucide-react'
+import { BookImage, BookOpen, CircleUser, Key, LogOut } from 'lucide-react'
 import Link from 'next/link'
 
 interface UserDropdownProps {
@@ -75,6 +75,12 @@ export function UserDropdown({ session, signOut, trackingLocation = 'navbar' }: 
           <Link href="/profile/api-keys">
             <Key className="mr-2 h-4 w-4 text-muted-foreground" />
             API Keys
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/docs">
+            <BookOpen className="mr-2 h-4 w-4 text-muted-foreground" />
+            Docs
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem
