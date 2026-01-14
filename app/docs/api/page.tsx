@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { CodeBlock } from '@/components/docs/code-block'
-import { Code2, Key, Layers, ArrowRight } from 'lucide-react'
+import { Code2, Key, Layers, ArrowRight, Plug } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'API Reference',
@@ -24,6 +24,13 @@ const endpoints = [
     href: '/docs/api/api-keys',
     icon: Key,
     methods: ['GET', 'POST', 'DELETE'],
+  },
+  {
+    title: 'MCP Server',
+    description: 'Connect AI assistants via Model Context Protocol.',
+    href: '/docs/mcp',
+    icon: Plug,
+    methods: ['MCP'],
   },
 ]
 
@@ -181,6 +188,8 @@ export default function ApiOverviewPage() {
                                 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                                 : method === 'POST'
                                 ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                                : method === 'MCP'
+                                ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400'
                                 : 'bg-red-500/10 text-red-600 dark:text-red-400'
                             }`}
                           >

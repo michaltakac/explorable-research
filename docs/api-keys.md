@@ -103,7 +103,7 @@ API keys also work with our MCP (Model Context Protocol) server, enabling AI ass
 |----------|-------------|
 | `https://mcp.explorableresearch.com/http` | MCP server endpoint |
 
-See [MCP Server Documentation](./mcp/README.md) for configuration and usage.
+See [MCP Server Documentation](https://explorableresearch.com/docs/mcp) for configuration and setup guides.
 
 ## Managing API Keys
 
