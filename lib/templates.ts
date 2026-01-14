@@ -64,30 +64,27 @@ Do not use any frameworks, bundlers, or build tools beyond CDN scripts.`,
       "typescript@~5.8.2",
       "vite@^6.2.0"
     ],
-    file: 'App.tsx',
+    file: 'src/App.tsx',
     instructions:
       `A single-page app template using React + Vite, that reloads automatically.
 
 You MUST FOLLOW THE STRUCTURE OF THE TEMPLATE:
-├── .gitignore
-├── App.tsx # Main application component (sections, navigation, content)
-├── index.css # Global styles and Tailwind customization
-├── index.html # HTML entry point (modify this to change the title of the explorable)
-├── index.tsx # React entry point (do not modify)
-├── metadata.json
-├── package-lock.json
+├── index.html # HTML entry point
 ├── package.json
-├── README.md
 ├── tsconfig.json
-├── types.ts
 ├── vite.config.ts
-└── components/ # Example of a folder containing interactive components - rework this structure to fit the needs of the project
-    ├── Diagrams.tsx # Example of an interactive diagram component 
-    └── QuantumScene.tsx # Example of a 3D visualization component using React Three Fiber (optional)
-      
-When user provides a link to a ArXiv paper (ignore any other types of links and URLs), 
-get the contents of this paper (PDF form available on ArXiv, so you need to access it through web), 
-and create an explorable research page from it based on the template provided.`,
+└── src/
+    ├── App.tsx # Main application component (sections, navigation, content) - THIS IS THE FILE YOU WRITE TO
+    ├── index.css # Global styles and Tailwind customization
+    ├── index.tsx # React entry point (do not modify)
+    ├── types.ts
+    └── components/ # Optional folder for additional components - rework this structure to fit the needs of the project
+
+When user provides a link to a ArXiv paper (ignore any other types of links and URLs),
+get the contents of this paper (PDF form available on ArXiv, so you need to access it through web),
+and create an explorable research page from it based on the template provided.
+
+IMPORTANT: Your code goes in src/App.tsx. The file_path must be "src/App.tsx".`,
     port: 3000,
   },
 }

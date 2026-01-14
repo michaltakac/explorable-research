@@ -1,19 +1,25 @@
 'use client'
 
 import Logo from '@/components/logo'
+import { UserDropdown } from '@/components/user-dropdown'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { cn } from '@/lib/utils'
 import { GitHubLogoIcon } from '@radix-ui/react-icons'
-import { Menu, ArrowLeft } from 'lucide-react'
+import { Session } from '@supabase/supabase-js'
+import { Menu, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 
 export function DocsHeader({
   onMenuClick,
   className,
+  session,
+  signOut,
 }: {
   onMenuClick?: () => void
   className?: string
+  session?: Session | null
+  signOut?: () => void
 }) {
   return (
     <header
@@ -69,12 +75,25 @@ export function DocsHeader({
             </a>
           </Button>
           <ThemeToggle />
-          <Button asChild size="sm" className="hidden sm:flex">
-            <Link href="/create">
-              <ArrowLeft className="h-4 w-4 mr-2 rotate-180" />
-              Back to App
-            </Link>
-          </Button>
+          {session && signOut ? (
+            <>
+              <Button variant="ghost" asChild className="hidden sm:inline-flex">
+                <Link href="/projects">Projects</Link>
+              </Button>
+              <UserDropdown
+                session={session}
+                signOut={signOut}
+                trackingLocation="docs-header"
+              />
+            </>
+          ) : (
+            <Button asChild size="sm" className="hidden sm:flex">
+              <Link href="/create">
+                Get Started
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
     </header>
