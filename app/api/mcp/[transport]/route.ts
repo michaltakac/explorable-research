@@ -1019,6 +1019,8 @@ const mcpHandler = createMcpHandler(
     sseMessageEndpoint: '/api/mcp/message',
     maxDuration: 300,
     verboseLogs: process.env.NODE_ENV === 'development',
+    // Redis for session persistence in serverless environment (Upstash Redis URL)
+    redisUrl: process.env.KV_URL || process.env.REDIS_URL,
   }
 )
 
