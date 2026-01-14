@@ -155,9 +155,10 @@ export default function McpDocsPage() {
                 Add the MCP server using the Claude Code CLI:
               </p>
               <CodeBlock
-                code={`claude mcp add explorable-research \\
-  --transport http \\
+                code={`claude mcp add \\
   --header "x-api-key: YOUR_API_KEY" \\
+  --transport http \\
+  explorable-research \\
   https://mcp.explorableresearch.com/http`}
                 language="bash"
                 title="Add MCP server"

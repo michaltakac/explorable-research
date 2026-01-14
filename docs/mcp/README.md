@@ -4,8 +4,14 @@ The Explorable Research MCP (Model Context Protocol) server allows AI assistants
 
 ## Server Endpoint
 
+**Production:**
 ```
 https://mcp.explorableresearch.com/http
+```
+
+**Local Development:**
+```
+http://localhost:3000/api/mcp/http
 ```
 
 ## Quick Setup
@@ -16,17 +22,29 @@ You need an API key to authenticate. Create one at [Profile > API Keys](https://
 
 ### Claude Code
 
+**Production:**
 ```bash
-claude mcp add explorable-research \
-  --transport http \
+claude mcp add \
   --header "x-api-key: YOUR_API_KEY" \
+  --transport http \
+  explorable-research \
   https://mcp.explorableresearch.com/http
+```
+
+**Local Development:**
+```bash
+claude mcp add \
+  --header "x-api-key: YOUR_API_KEY" \
+  --transport http \
+  explorable-research-local \
+  http://localhost:3000/api/mcp/http
 ```
 
 ### Cursor
 
 Add to `~/.cursor/mcp.json`:
 
+**Production:**
 ```json
 {
   "mcpServers": {
@@ -40,15 +58,44 @@ Add to `~/.cursor/mcp.json`:
 }
 ```
 
+**Local Development:**
+```json
+{
+  "mcpServers": {
+    "explorable-research-local": {
+      "url": "http://localhost:3000/api/mcp/http",
+      "headers": {
+        "x-api-key": "YOUR_API_KEY"
+      }
+    }
+  }
+}
+```
+
 ### Claude Desktop
 
 Add to `claude_desktop_config.json`:
 
+**Production:**
 ```json
 {
   "mcpServers": {
     "explorable-research": {
       "url": "https://mcp.explorableresearch.com/http",
+      "headers": {
+        "x-api-key": "YOUR_API_KEY"
+      }
+    }
+  }
+}
+```
+
+**Local Development:**
+```json
+{
+  "mcpServers": {
+    "explorable-research-local": {
+      "url": "http://localhost:3000/api/mcp/http",
       "headers": {
         "x-api-key": "YOUR_API_KEY"
       }
