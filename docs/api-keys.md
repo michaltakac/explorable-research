@@ -95,6 +95,16 @@ All endpoints that support JWT authentication also support API key authenticatio
 
 See [API v1 Documentation](./api-project-creation-plan.md) for detailed usage.
 
+### MCP Server (for AI Assistants)
+
+API keys also work with our MCP (Model Context Protocol) server, enabling AI assistants like Claude to manage projects on your behalf.
+
+| Endpoint | Description |
+|----------|-------------|
+| `https://mcp.explorableresearch.com/http` | MCP server endpoint |
+
+See [MCP Server Documentation](./mcp/README.md) for configuration and usage.
+
 ## Managing API Keys
 
 ### Viewing Keys
