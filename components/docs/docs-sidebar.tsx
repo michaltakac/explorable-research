@@ -18,6 +18,7 @@ import {
   Globe,
   Zap,
   X,
+  Plug,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -83,6 +84,11 @@ const navigation: NavItem[] = [
         icon: Key,
       },
     ],
+  },
+  {
+    title: 'MCP Server',
+    href: '/docs/mcp',
+    icon: Plug,
   },
   {
     title: 'API Keys Guide',
