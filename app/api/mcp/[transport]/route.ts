@@ -1019,6 +1019,8 @@ const mcpHandler = createMcpHandler(
     sseMessageEndpoint: '/api/mcp/message',
     maxDuration: 300,
     verboseLogs: process.env.NODE_ENV === 'development',
+    // Redis for session persistence in serverless environment (Upstash Redis URL)
+    redisUrl: process.env.KV_URL || process.env.REDIS_URL,
   }
 )
 
@@ -1026,18 +1028,29 @@ const mcpHandler = createMcpHandler(
  * Verify token from x-api-key header or Authorization header
  */
 async function verifyToken(req: Request, bearerToken?: string) {
+  // Debug logging
+  console.log('[MCP Auth] verifyToken called')
+  console.log('[MCP Auth] bearerToken:', bearerToken ? 'present' : 'not present')
+
   // Try x-api-key header first (Context7 style)
-  const apiKey = req.headers.get('x-api-key') || bearerToken
+  const apiKeyHeader = req.headers.get('x-api-key')
+  console.log('[MCP Auth] x-api-key header:', apiKeyHeader ? 'present' : 'not present')
+
+  const apiKey = apiKeyHeader || bearerToken
 
   if (!apiKey) {
+    console.log('[MCP Auth] No API key found')
     return undefined
   }
 
+  console.log('[MCP Auth] Validating API key...')
   const user = await validateApiKey(apiKey)
   if (!user) {
+    console.log('[MCP Auth] API key validation failed')
     return undefined
   }
 
+  console.log('[MCP Auth] API key valid, user:', user.userId)
   return {
     token: apiKey,
     clientId: user.userId,
