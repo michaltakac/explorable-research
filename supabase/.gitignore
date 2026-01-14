@@ -1,0 +1,3 @@
+# Ignore local Supabase files
+.branches
+.temp
