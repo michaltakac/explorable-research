@@ -5,6 +5,7 @@ import { ExecutionResult } from '@/lib/types'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  console.log('[API] GET /api/projects - handler started')
   try {
     let supabase, authContext
     try {
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       supabase = result.supabase
       authContext = result.authContext
     } catch (e) {
-      console.error('Failed to create Supabase client:', e)
+      console.error('[API] GET /api/projects - Failed to create Supabase client:', e)
       return NextResponse.json({ error: 'Supabase is not configured' }, { status: 500 })
     }
 
@@ -36,9 +37,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'Failed to load projects' }, { status: 500 })
     }
 
+    console.log('[API] GET /api/projects - success, returning', data?.length ?? 0, 'projects')
     return NextResponse.json({ projects: data ?? [] })
   } catch (err) {
-    console.error('Unexpected error in GET /api/projects:', err)
+    console.error('[API] GET /api/projects - Unexpected error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

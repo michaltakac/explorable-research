@@ -7,15 +7,17 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ project_id: string }> },
 ): Promise<NextResponse> {
+  console.log('[API] GET /api/projects/[project_id] - handler started')
   try {
     const { project_id } = await params
+    console.log('[API] GET /api/projects/[project_id] - project_id:', project_id)
     let supabase, authContext
     try {
       const result = createSupabaseFromRequest(request)
       supabase = result.supabase
       authContext = result.authContext
     } catch (e) {
-      console.error('Failed to create Supabase client:', e)
+      console.error('[API] GET /api/projects/[project_id] - Failed to create Supabase client:', e)
       return NextResponse.json({ error: 'Supabase is not configured' }, { status: 500 })
     }
 
