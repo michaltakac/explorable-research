@@ -1013,10 +1013,11 @@ const mcpHandler = createMcpHandler(
     },
   },
   {
-    // Note: Don't use basePath - it overrides individual endpoint configs
-    streamableHttpEndpoint: '/api/mcp/http',
-    sseEndpoint: '/api/mcp/sse',
-    sseMessageEndpoint: '/api/mcp/message',
+    // Configure for subdomain paths (mcp.explorableresearch.com/http)
+    // The middleware rewrites these to /api/mcp/http but mcp-handler sees original path
+    streamableHttpEndpoint: '/http',
+    sseEndpoint: '/sse',
+    sseMessageEndpoint: '/message',
     maxDuration: 300,
     verboseLogs: process.env.NODE_ENV === 'development',
     // Redis for session persistence in serverless environment (Upstash Redis URL)
