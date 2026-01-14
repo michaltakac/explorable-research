@@ -1,11 +1,12 @@
 import { createSupabaseFromRequest, verifyUser } from '@/lib/supabase-server'
 import { ExecutionResult } from '@/lib/types'
 import { Sandbox } from '@e2b/code-interpreter'
+import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ project_id: string }> },
-) {
+): Promise<NextResponse> {
   try {
     const { project_id } = await params
     let supabase, authContext
@@ -13,17 +14,18 @@ export async function GET(
       const result = createSupabaseFromRequest(request)
       supabase = result.supabase
       authContext = result.authContext
-    } catch {
-      return new Response('Supabase is not configured', { status: 500 })
+    } catch (e) {
+      console.error('Failed to create Supabase client:', e)
+      return NextResponse.json({ error: 'Supabase is not configured' }, { status: 500 })
     }
 
     if (authContext.mode === 'none') {
-      return new Response('Unauthorized', { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const user = await verifyUser(supabase, authContext)
     if (!user) {
-      return new Response('Unauthorized', { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { data, error } = await supabase
@@ -34,20 +36,20 @@ export async function GET(
       .single()
 
     if (error || !data) {
-      return new Response('Project not found', { status: 404 })
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
-    return Response.json({ project: data })
+    return NextResponse.json({ project: data })
   } catch (err) {
     console.error('Unexpected error in GET /api/projects/[project_id]:', err)
-    return new Response('Internal server error', { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ project_id: string }> },
-) {
+): Promise<NextResponse> {
   try {
     const { project_id } = await params
     let supabase, authContext
@@ -55,17 +57,18 @@ export async function DELETE(
       const result = createSupabaseFromRequest(request)
       supabase = result.supabase
       authContext = result.authContext
-    } catch {
-      return new Response('Supabase is not configured', { status: 500 })
+    } catch (e) {
+      console.error('Failed to create Supabase client:', e)
+      return NextResponse.json({ error: 'Supabase is not configured' }, { status: 500 })
     }
 
     if (authContext.mode === 'none') {
-      return new Response('Unauthorized', { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const user = await verifyUser(supabase, authContext)
     if (!user) {
-      return new Response('Unauthorized', { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // First, get the project to retrieve the sandbox ID
@@ -77,7 +80,7 @@ export async function DELETE(
       .single()
 
     if (fetchError || !project) {
-      return new Response('Project not found', { status: 404 })
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
     // Try to kill the E2B sandbox if it exists
@@ -99,12 +102,13 @@ export async function DELETE(
       .eq('user_id', user.userId)
 
     if (deleteError) {
-      return new Response('Failed to delete project', { status: 500 })
+      console.error('Failed to delete project:', deleteError)
+      return NextResponse.json({ error: 'Failed to delete project' }, { status: 500 })
     }
 
-    return new Response(null, { status: 204 })
+    return new NextResponse(null, { status: 204 })
   } catch (err) {
     console.error('Unexpected error in DELETE /api/projects/[project_id]:', err)
-    return new Response('Internal server error', { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
