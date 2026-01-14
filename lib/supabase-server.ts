@@ -1,14 +1,40 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
+// Note: NEXT_PUBLIC_ vars are safe to read at module load time as they're inlined at build
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseKey =
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ||
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 const enableSupabase = process.env.NEXT_PUBLIC_ENABLE_SUPABASE
 const isSupabaseEnabled = enableSupabase
   ? !['false', '0', 'off'].includes(enableSupabase.toLowerCase())
   : true
+
+/**
+ * Get the service role key at runtime (not cached at module load time)
+ * This ensures the env var is read fresh, especially important for Next.js dev mode
+ */
+function getServiceRoleKey(): string | undefined {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  // Debug: Log whether the key is found (first time only)
+  if (!getServiceRoleKey.logged) {
+    getServiceRoleKey.logged = true
+    if (key) {
+      console.log(`[Supabase] Service role key found (${key.substring(0, 20)}...)`)
+    } else {
+      // Check if maybe it's set with a different name
+      const envKeys = Object.keys(process.env).filter(k => 
+        k.toLowerCase().includes('supabase') && k.toLowerCase().includes('service')
+      )
+      if (envKeys.length > 0) {
+        console.warn(`[Supabase] SUPABASE_SERVICE_ROLE_KEY not found, but found similar: ${envKeys.join(', ')}`)
+      }
+    }
+  }
+  return key
+}
+// TypeScript hack for static property on function
+getServiceRoleKey.logged = false
 
 /**
  * Creates a Supabase admin client with service role key.
@@ -20,7 +46,17 @@ export function createSupabaseAdmin(): SupabaseClient {
     throw new Error('Supabase environment variables are missing')
   }
 
-  const key = supabaseServiceRoleKey || supabaseKey
+  // Read at call time, not module load time
+  const serviceRoleKey = getServiceRoleKey()
+
+  if (!serviceRoleKey) {
+    console.warn(
+      'SUPABASE_SERVICE_ROLE_KEY is not set. Admin operations may fail due to RLS restrictions. ' +
+      'Falling back to anon key which may not have sufficient permissions.'
+    )
+  }
+
+  const key = serviceRoleKey || supabaseKey
   if (!key) {
     throw new Error('Supabase key is missing')
   }

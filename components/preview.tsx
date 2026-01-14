@@ -13,7 +13,7 @@ import { FragmentSchema } from '@/lib/schema'
 import { getTemplateId } from '@/lib/templates'
 import { ExecutionResult, ExecutionResultWeb } from '@/lib/types'
 import { DeepPartial } from 'ai'
-import { ChevronsRight, LoaderCircle } from 'lucide-react'
+import { ChevronsRight, Maximize2, Columns2, LoaderCircle } from 'lucide-react'
 import { Dispatch, SetStateAction } from 'react'
 
 export function Preview({
@@ -24,6 +24,8 @@ export function Preview({
   fragment,
   result,
   onClose,
+  isExpanded,
+  onToggleExpand,
 }: {
   selectedTab: 'code' | 'fragment'
   onSelectedTabChange: Dispatch<SetStateAction<'code' | 'fragment'>>
@@ -32,6 +34,8 @@ export function Preview({
   fragment?: DeepPartial<FragmentSchema>
   result?: ExecutionResult
   onClose: () => void
+  isExpanded?: boolean
+  onToggleExpand?: () => void
 }) {
   if (!fragment) {
     return null
@@ -51,21 +55,46 @@ export function Preview({
         className="h-full flex flex-col items-start justify-start"
       >
         <div className="w-full p-2 grid grid-cols-3 items-center border-b">
-          <TooltipProvider>
-            <Tooltip delayDuration={0}>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-muted-foreground"
-                  onClick={onClose}
-                >
-                  <ChevronsRight className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Close sidebar</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <div className="flex items-center gap-1">
+            <TooltipProvider>
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground"
+                    onClick={onClose}
+                  >
+                    <ChevronsRight className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Close sidebar</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            {onToggleExpand && (
+              <TooltipProvider>
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground"
+                      onClick={onToggleExpand}
+                    >
+                      {isExpanded ? (
+                        <Columns2 className="h-4 w-4" />
+                      ) : (
+                        <Maximize2 className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {isExpanded ? 'Show chat panel' : 'Expand to fullscreen'}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
           <div className="flex justify-center">
             <TabsList className="px-1 py-0 border h-8">
               <TabsTrigger
