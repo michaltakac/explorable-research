@@ -1,5 +1,9 @@
--- Seed Migration: Create 100 test users with API keys for development/testing
--- WARNING: This migration is for DEVELOPMENT ONLY. Do not run in production.
+-- Seed File: Create 100 test users with API keys for development/testing
+-- WARNING: This file is for DEVELOPMENT ONLY. It will NOT be applied to production.
+--
+-- Usage:
+--   supabase db reset    # Resets the database and runs migrations + this seed file
+--   -- OR manually run this file on a dev branch --
 --
 -- This creates 100 test users with:
 -- - Mix of real names and funny fake names (~10% funny)
@@ -308,12 +312,19 @@ CREATE TABLE IF NOT EXISTS public.seeded_test_users (
 ALTER TABLE public.seeded_test_users ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Only service role can access this table
-CREATE POLICY "Service role full access to seeded_test_users"
-  ON public.seeded_test_users
-  FOR ALL
-  TO service_role
-  USING (true)
-  WITH CHECK (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'seeded_test_users' AND policyname = 'Service role full access to seeded_test_users'
+  ) THEN
+    CREATE POLICY "Service role full access to seeded_test_users"
+      ON public.seeded_test_users
+      FOR ALL
+      TO service_role
+      USING (true)
+      WITH CHECK (true);
+  END IF;
+END $$;
 
 -- Comment explaining the table
 COMMENT ON TABLE public.seeded_test_users IS
