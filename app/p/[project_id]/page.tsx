@@ -3,6 +3,8 @@
 import { ViewType } from '@/components/auth'
 import { AuthDialog } from '@/components/auth-dialog'
 import { Chat } from '@/components/chat'
+import { ChatInput } from '@/components/chat-input'
+import { ChatPicker } from '@/components/chat-picker'
 import { NavBar } from '@/components/navbar'
 import { Preview } from '@/components/preview'
 import { Button } from '@/components/ui/button'
@@ -15,14 +17,26 @@ import {
 } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/lib/auth'
-import { Message } from '@/lib/messages'
-import { FragmentSchema } from '@/lib/schema'
+import {
+  Message,
+  MessageStorageFile,
+  sanitizeMessagesForStorage,
+  toAISDKMessages,
+  toMessageImage,
+} from '@/lib/messages'
+import { LLMModelConfig } from '@/lib/models'
+import modelsList from '@/lib/models.json'
+import { FragmentSchema, fragmentSchema as schema } from '@/lib/schema'
 import { supabase } from '@/lib/supabase'
+import templates, { getTemplateIdSuffix } from '@/lib/templates'
 import { ExecutionResult } from '@/lib/types'
 import { DeepPartial } from 'ai'
+import { experimental_useObject as useObject } from '@ai-sdk/react'
+import { usePostHog } from 'posthog-js/react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef, SetStateAction } from 'react'
+import { useLocalStorage } from 'usehooks-ts'
 import { Loader2, FileText, Sparkles, Box, CheckCircle2, XCircle, Clock } from 'lucide-react'
 
 const emptyMessages: Message[] = []
@@ -71,6 +85,13 @@ type ProjectRecord = {
   fragment: FragmentSchema | null
   result: ExecutionResult | null
   messages: Message[] | null
+  published_url?: string | null
+  subdomain_slug?: string | null
+  is_static_deployed?: boolean
+  generation_metadata?: {
+    model?: string
+    model_config?: LLMModelConfig
+  } | null
 }
 
 export default function ProjectDetailPage() {
@@ -92,7 +113,53 @@ export default function ProjectDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
   const [isPreviewExpanded, setIsPreviewExpanded] = useState(false)
+  const [publishedUrl, setPublishedUrl] = useState<string | null>(null)
+  const [isStaticDeployed, setIsStaticDeployed] = useState(false)
   const { session } = useAuth(setAuthDialog, setAuthView)
+  const posthog = usePostHog()
+
+  // Chat continuation state
+  const [chatInput, setChatInput] = useLocalStorage('projectChat', '')
+  const [files, setFiles] = useState<File[]>([])
+  const [pdfFiles, setPdfFiles] = useState<File[]>([])
+  const [languageModel, setLanguageModel] = useLocalStorage<LLMModelConfig>(
+    'languageModel',
+    {
+      model: 'google/gemini-3-pro-preview:online',
+    },
+  )
+  const [selectedTemplate, setSelectedTemplate] = useState<string>(
+    getTemplateIdSuffix('explorable-research-developer'),
+  )
+  const [isRateLimited, setIsRateLimited] = useState(false)
+  const [chatErrorMessage, setChatErrorMessage] = useState('')
+  const messagesRef = useRef<Message[]>([])
+
+  // Keep messagesRef in sync
+  useEffect(() => {
+    messagesRef.current = messages
+  }, [messages])
+
+  // Model and template setup
+  const filteredModels = modelsList.models.filter((model) => {
+    if (process.env.NEXT_PUBLIC_HIDE_LOCAL_MODELS) {
+      return model.providerId !== 'ollama'
+    }
+    return true
+  })
+
+  const defaultModel = filteredModels.find(
+    (model) => model.id === 'google/gemini-3-pro-preview:online',
+  ) || filteredModels[0]
+
+  const currentModel = filteredModels.find(
+    (model) => model.id === languageModel.model,
+  ) || defaultModel
+
+  const currentTemplate =
+    selectedTemplate === 'auto'
+      ? templates
+      : { [selectedTemplate]: templates[selectedTemplate] }
 
   // Check if project is still processing
   const isProcessing = project?.status && PROCESSING_STATUSES.includes(project.status)
@@ -123,11 +190,26 @@ export default function ProjectDetailPage() {
       setMessages(data.project.messages ?? emptyMessages)
       setCurrentFragment(data.project.fragment ?? undefined)
       setCurrentResult(data.project.result ?? undefined)
+      setPublishedUrl(data.project.published_url ?? null)
+      setIsStaticDeployed(data.project.is_static_deployed ?? false)
+
+      // Load template from fragment (locked - can't be changed)
+      if (data.project.fragment?.template) {
+        setSelectedTemplate(getTemplateIdSuffix(data.project.fragment.template))
+      }
+
+      // Load model from generation_metadata if available
+      if (data.project.generation_metadata?.model_config) {
+        setLanguageModel(data.project.generation_metadata.model_config)
+      } else if (data.project.generation_metadata?.model) {
+        setLanguageModel({ model: data.project.generation_metadata.model })
+      }
     } catch {
       setErrorMessage('Unable to load this project right now.')
     } finally {
       setIsLoading(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, session?.access_token])
 
   // Initial load
@@ -152,6 +234,238 @@ export default function ProjectDetailPage() {
     return () => clearInterval(pollInterval)
   }, [isProcessing, session?.access_token, loadProject])
 
+  // AI generation hook for chat continuation
+  const { object, submit, isLoading: isChatLoading, stop, error: chatError } = useObject({
+    api: '/api/chat',
+    schema,
+    onError: (error) => {
+      console.error('Error submitting request:', error)
+      if (error.message.includes('limit')) {
+        setIsRateLimited(true)
+      }
+      setChatErrorMessage(error.message)
+    },
+    onFinish: async ({ object: fragment, error }) => {
+      if (!error && fragment) {
+        posthog.capture('fragment_generated', {
+          template: fragment?.template,
+        })
+
+        const response = await fetch('/api/sandbox', {
+          method: 'POST',
+          body: JSON.stringify({
+            fragment,
+            userID: session?.user?.id,
+            existingSandboxId: currentResult?.sbxId,
+          }),
+        })
+
+        const sandboxResult = await response.json()
+        posthog.capture('sandbox_created', { url: sandboxResult.url })
+
+        setCurrentResult(sandboxResult)
+        setCurrentFragment(fragment)
+        setCurrentTab('fragment')
+
+        // Update project in database
+        await updateProject({ fragment, result: sandboxResult })
+      }
+    },
+  })
+
+  // Handle streaming object updates
+  useEffect(() => {
+    if (object) {
+      setCurrentFragment(object)
+      const lastMessage = messages[messages.length - 1]
+      const content: Message['content'] = [
+        { type: 'text', text: object.commentary || '' },
+        { type: 'code', text: object.code || '' },
+      ]
+
+      if (!lastMessage || lastMessage.role !== 'assistant') {
+        setMessages((prev) => [...prev, { role: 'assistant', content, object }])
+      } else if (lastMessage.role === 'assistant') {
+        setMessages((prev) => {
+          const updated = [...prev]
+          updated[updated.length - 1] = {
+            ...updated[updated.length - 1],
+            content,
+            object,
+          }
+          return updated
+        })
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [object])
+
+  // Stop on error
+  useEffect(() => {
+    if (chatError) stop()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatError])
+
+  // Update project in database
+  async function updateProject({
+    fragment,
+    result,
+  }: {
+    fragment: DeepPartial<FragmentSchema> | undefined
+    result: ExecutionResult | undefined
+  }) {
+    if (!session?.access_token || !projectId || !fragment || !result) return
+
+    const sanitizedMessages = sanitizeMessagesForStorage(messagesRef.current ?? [])
+    const updatedMessages = sanitizedMessages.map((message, index) => {
+      if (index === sanitizedMessages.length - 1 && message.role === 'assistant') {
+        return { ...message, object: fragment, result }
+      }
+      return message
+    })
+
+    try {
+      await fetch(`/api/projects/${projectId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          fragment,
+          result,
+          messages: updatedMessages,
+          generation_metadata: {
+            model: languageModel.model,
+            model_config: languageModel,
+          },
+        }),
+      })
+    } catch (err) {
+      console.error('Failed to update project:', err)
+    }
+  }
+
+  // Upload PDF to storage
+  async function uploadPdfToStorage(file: File): Promise<MessageStorageFile | null> {
+    if (!session?.access_token) return null
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      const response = await fetch('/api/pdf/upload', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: formData,
+      })
+
+      if (!response.ok) return null
+
+      const result = await response.json()
+      return {
+        type: 'storage-file',
+        storagePath: result.storagePath,
+        mimeType: 'application/pdf',
+        filename: result.filename,
+        size: result.size,
+      }
+    } catch {
+      return null
+    }
+  }
+
+  // Handle chat submit
+  async function handleSubmitChat(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+
+    if (!session) {
+      return setAuthDialog(true)
+    }
+
+    if (isChatLoading) {
+      stop()
+      return
+    }
+
+    const content: Message['content'] = []
+    const images = await toMessageImage(files)
+
+    // Upload PDFs to storage
+    const uploadedPdfs: MessageStorageFile[] = []
+    for (const file of pdfFiles) {
+      const uploaded = await uploadPdfToStorage(file)
+      if (uploaded) {
+        uploadedPdfs.push(uploaded)
+      }
+    }
+
+    if (chatInput.trim()) {
+      content.push({ type: 'text', text: chatInput })
+    }
+
+    if (images.length > 0) {
+      images.forEach((image) => {
+        content.push({ type: 'image', image })
+      })
+    }
+
+    uploadedPdfs.forEach((pdf) => {
+      content.push(pdf)
+    })
+
+    const updatedMessages = [...messages, { role: 'user' as const, content }]
+    setMessages(updatedMessages)
+
+    submit({
+      userID: session?.user?.id,
+      messages: toAISDKMessages(updatedMessages),
+      template: currentTemplate,
+      model: currentModel,
+      config: languageModel,
+      accessToken: session?.access_token,
+    })
+
+    setChatInput('')
+    setFiles([])
+    setPdfFiles([])
+    setCurrentTab('code')
+
+    posthog.capture('chat_submit', {
+      template: selectedTemplate,
+      model: languageModel.model,
+      projectId,
+    })
+  }
+
+  function retry() {
+    submit({
+      userID: session?.user?.id,
+      messages: toAISDKMessages(messages),
+      template: currentTemplate,
+      model: currentModel,
+      config: languageModel,
+    })
+  }
+
+  function handleChatInputChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    setChatInput(e.target.value)
+  }
+
+  function handleFileChange(change: React.SetStateAction<File[]>) {
+    setFiles(change)
+  }
+
+  function handlePdfFileChange(change: React.SetStateAction<File[]>) {
+    setPdfFiles(change)
+  }
+
+  function handleLanguageModelChange(e: LLMModelConfig) {
+    setLanguageModel({ ...languageModel, ...e })
+  }
+
   function handleSocialClick(target: 'github' | 'x') {
     if (target === 'github') {
       window.open('https://github.com/michaltakac/explorable-research', '_blank')
@@ -172,6 +486,45 @@ export default function ProjectDetailPage() {
   }) {
     setCurrentFragment(preview.fragment)
     setCurrentResult(preview.result)
+  }
+
+  function handlePublishChange(published: boolean, url: string | null) {
+    setIsStaticDeployed(published)
+    setPublishedUrl(url)
+  }
+
+  const [isRegenerating, setIsRegenerating] = useState(false)
+
+  async function handleRegenerateSandbox() {
+    if (!session?.access_token || !projectId) return
+
+    setIsRegenerating(true)
+    try {
+      const response = await fetch(`/api/projects/${projectId}/sandbox`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to regenerate sandbox')
+      }
+
+      const data = await response.json()
+      setCurrentResult(data.result)
+
+      // Update the project state as well
+      if (project) {
+        setProject({ ...project, result: data.result })
+      }
+    } catch (err) {
+      console.error('Failed to regenerate sandbox:', err)
+      // Could show a toast here
+    } finally {
+      setIsRegenerating(false)
+    }
   }
 
   // Show loading state
@@ -472,16 +825,42 @@ export default function ProjectDetailPage() {
           )}
           <Chat
             messages={messages}
-            isLoading={false}
+            isLoading={isChatLoading}
             setCurrentPreview={setCurrentPreview}
           />
+          <ChatInput
+            retry={retry}
+            isErrored={chatError !== undefined}
+            errorMessage={chatErrorMessage}
+            isLoading={isChatLoading}
+            isRateLimited={isRateLimited}
+            stop={stop}
+            input={chatInput}
+            handleInputChange={handleChatInputChange}
+            handleSubmit={handleSubmitChat}
+            isMultiModal={currentModel?.multiModal || false}
+            files={files}
+            handleFileChange={handleFileChange}
+            pdfFiles={pdfFiles}
+            handlePdfFileChange={handlePdfFileChange}
+          >
+            <ChatPicker
+              templates={templates}
+              selectedTemplate={selectedTemplate}
+              onSelectedTemplateChange={setSelectedTemplate}
+              models={filteredModels}
+              languageModel={languageModel}
+              onLanguageModelChange={handleLanguageModelChange}
+              templateDisabled={true}
+            />
+          </ChatInput>
         </div>
         {/* Preview panel - takes full width when expanded */}
         <div className={isPreviewExpanded ? 'col-span-2' : ''}>
           <Preview
             selectedTab={effectiveTab}
             onSelectedTabChange={setCurrentTab}
-            isChatLoading={false}
+            isChatLoading={isChatLoading}
             isPreviewLoading={!!isSandboxLoading}
             fragment={currentFragment}
             result={currentResult}
@@ -491,6 +870,13 @@ export default function ProjectDetailPage() {
             }}
             isExpanded={isPreviewExpanded}
             onToggleExpand={() => setIsPreviewExpanded(!isPreviewExpanded)}
+            projectId={projectId}
+            accessToken={session?.access_token}
+            publishedUrl={publishedUrl}
+            isStaticDeployed={isStaticDeployed}
+            onPublishChange={handlePublishChange}
+            onRegenerateSandbox={handleRegenerateSandbox}
+            isRegenerating={isRegenerating}
           />
         </div>
       </div>

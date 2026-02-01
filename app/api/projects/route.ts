@@ -28,7 +28,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const { data, error } = await supabase
       .from('projects')
-      .select('id, title, description, created_at, result')
+      .select('id, title, description, created_at, result, published_url, subdomain_slug, is_static_deployed')
       .eq('user_id', user.userId)
       .order('created_at', { ascending: false })
 

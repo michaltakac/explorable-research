@@ -32,7 +32,7 @@ export async function GET(
 
     const { data, error } = await supabase
       .from('projects')
-      .select('id, title, description, created_at, status, updated_at, fragment, result, messages')
+      .select('id, title, description, created_at, status, updated_at, fragment, result, messages, published_url, subdomain_slug, is_static_deployed, generation_metadata')
       .eq('id', project_id)
       .eq('user_id', user.userId)
       .single()
@@ -44,6 +44,78 @@ export async function GET(
     return NextResponse.json({ project: data })
   } catch (err) {
     console.error('Unexpected error in GET /api/projects/[project_id]:', err)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ project_id: string }> },
+): Promise<NextResponse> {
+  console.log('[API] PATCH /api/projects/[project_id] - handler started')
+  try {
+    const { project_id } = await params
+    let supabase, authContext
+    try {
+      const result = createSupabaseFromRequest(request)
+      supabase = result.supabase
+      authContext = result.authContext
+    } catch (e) {
+      console.error('[API] PATCH /api/projects/[project_id] - Failed to create Supabase client:', e)
+      return NextResponse.json({ error: 'Supabase is not configured' }, { status: 500 })
+    }
+
+    if (authContext.mode === 'none') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const user = await verifyUser(supabase, authContext)
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { fragment, result, messages, generation_metadata } = body
+
+    // Build update object with only provided fields
+    const updateData: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    }
+
+    if (fragment !== undefined) {
+      updateData.fragment = fragment
+      // Update title from fragment if available
+      if (fragment.title) {
+        updateData.title = fragment.title
+      }
+    }
+    if (result !== undefined) {
+      updateData.result = result
+    }
+    if (messages !== undefined) {
+      updateData.messages = messages
+    }
+    if (generation_metadata !== undefined) {
+      updateData.generation_metadata = generation_metadata
+    }
+
+    const { data, error } = await supabase
+      .from('projects')
+      .update(updateData)
+      .eq('id', project_id)
+      .eq('user_id', user.userId)
+      .select()
+      .single()
+
+    if (error || !data) {
+      console.error('[API] PATCH /api/projects/[project_id] - Update failed:', error)
+      return NextResponse.json({ error: 'Failed to update project' }, { status: 500 })
+    }
+
+    console.log('[API] PATCH /api/projects/[project_id] - Successfully updated project', project_id)
+    return NextResponse.json({ project: data })
+  } catch (err) {
+    console.error('Unexpected error in PATCH /api/projects/[project_id]:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

@@ -1,0 +1,27 @@
+# CloudFlare Worker for routing subdomain requests to R2
+# Handles: {slug}.explorableresearch.com -> R2 bucket/projects/{project_id}/
+
+name = "explorable-subdomain-router"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+account_id = "0d3d5c5a62f6a8da2b5d7058abbab5cb"
+
+# Routes - must be before any sections like [vars]
+routes = [
+  { pattern = "*.explorableresearch.com/*", zone_name = "explorableresearch.com" }
+]
+
+# R2 bucket binding
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "explorable-websites"
+
+# Environment variables (set via wrangler secret or dashboard)
+[vars]
+SUPABASE_URL = "https://ytezflduoydgrfxrkvpd.supabase.co"
+
+# For local development
+[dev]
+port = 8787
+local_protocol = "http"
