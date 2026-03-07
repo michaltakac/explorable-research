@@ -109,6 +109,7 @@ export async function POST(request: NextRequest) {
   const pdfMimeType = 'application/pdf'
   let arxivTitle: string | undefined
   let arxivAbstract: string | undefined
+  let allImages: Array<{ data: string; mimeType: string }> | undefined = input.images
 
   if (input.arxiv_url) {
     // Process ArXiv URL
@@ -139,6 +140,12 @@ export async function POST(request: NextRequest) {
     } else {
       pdfData = arxivResult.pdf.data
       console.log(`PDF loaded (${(arxivResult.pdf.size / 1024).toFixed(1)} KB)`)
+    }
+
+    // Merge extracted HTML images with any user-provided images
+    if (arxivResult.htmlImages && arxivResult.htmlImages.length > 0) {
+      allImages = [...(allImages || []), ...arxivResult.htmlImages]
+      console.log(`Added ${arxivResult.htmlImages.length} images from ArXiv HTML page`)
     }
   } else if (input.pdf_file && input.pdf_filename) {
     // Process uploaded PDF
@@ -189,7 +196,7 @@ export async function POST(request: NextRequest) {
     pdfStoragePath,
     pdfFilename,
     pdfMimeType,
-    images: input.images,
+    images: allImages,
     instruction: input.instruction,
     arxivTitle,
     arxivAbstract,

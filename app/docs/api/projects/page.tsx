@@ -40,7 +40,7 @@ export default function ProjectsApiPage() {
               name: 'arxiv_url',
               type: 'string',
               required: false,
-              description: 'ArXiv paper URL (e.g., https://arxiv.org/abs/2301.00001). Either arxiv_url or pdf_file is required.',
+              description: 'ArXiv paper URL (e.g., https://arxiv.org/abs/2301.00001 or https://arxiv.org/html/2301.00001). HTML URLs extract paper figures for richer AI context. Either arxiv_url or pdf_file is required.',
             },
             {
               name: 'pdf_file',

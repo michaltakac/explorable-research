@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { extractArxivId } from '../arxiv'
+import { extractArxivId, isArxivHtmlUrl } from '../arxiv'
 
 describe('ArXiv Utilities', () => {
   describe('extractArxivId', () => {
@@ -64,6 +64,46 @@ describe('ArXiv Utilities', () => {
     it('should handle 5-digit paper numbers', () => {
       expect(extractArxivId('2301.12345')).toBe('2301.12345')
       expect(extractArxivId('https://arxiv.org/abs/2301.12345')).toBe('2301.12345')
+    })
+
+    it('should extract ID from modern arXiv html URL', () => {
+      expect(extractArxivId('https://arxiv.org/html/2301.00001')).toBe('2301.00001')
+      expect(extractArxivId('https://arxiv.org/html/2301.00001v1')).toBe('2301.00001v1')
+      expect(extractArxivId('https://arxiv.org/html/2603.05344v1')).toBe('2603.05344v1')
+    })
+
+    it('should extract ID from old-style arXiv html URL', () => {
+      expect(extractArxivId('https://arxiv.org/html/hep-th/9901001')).toBe('hep-th/9901001')
+      expect(extractArxivId('https://arxiv.org/html/hep-th/9901001v1')).toBe('hep-th/9901001v1')
+    })
+
+    it('should handle html URLs with http instead of https', () => {
+      expect(extractArxivId('http://arxiv.org/html/2301.00001')).toBe('2301.00001')
+      expect(extractArxivId('http://arxiv.org/html/2301.00001v1')).toBe('2301.00001v1')
+    })
+
+    it('should handle html URLs with 5-digit paper numbers', () => {
+      expect(extractArxivId('https://arxiv.org/html/2301.12345')).toBe('2301.12345')
+      expect(extractArxivId('https://arxiv.org/html/2301.12345v2')).toBe('2301.12345v2')
+    })
+  })
+
+  describe('isArxivHtmlUrl', () => {
+    it('should return true for ArXiv HTML URLs', () => {
+      expect(isArxivHtmlUrl('https://arxiv.org/html/2301.00001')).toBe(true)
+      expect(isArxivHtmlUrl('https://arxiv.org/html/2301.00001v1')).toBe(true)
+      expect(isArxivHtmlUrl('http://arxiv.org/html/2603.05344v1')).toBe(true)
+    })
+
+    it('should return false for non-HTML ArXiv URLs', () => {
+      expect(isArxivHtmlUrl('https://arxiv.org/abs/2301.00001')).toBe(false)
+      expect(isArxivHtmlUrl('https://arxiv.org/pdf/2301.00001.pdf')).toBe(false)
+      expect(isArxivHtmlUrl('2301.00001')).toBe(false)
+    })
+
+    it('should return false for non-ArXiv URLs', () => {
+      expect(isArxivHtmlUrl('https://example.com/html/something')).toBe(false)
+      expect(isArxivHtmlUrl('')).toBe(false)
     })
   })
 })

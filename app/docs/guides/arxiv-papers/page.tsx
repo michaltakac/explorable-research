@@ -77,6 +77,9 @@ https://arxiv.org/abs/2301.07067
 # PDF URL
 https://arxiv.org/pdf/2301.07067.pdf
 
+# HTML version (extracts paper figures for richer context)
+https://arxiv.org/html/2301.07067v1
+
 # Just the arXiv ID
 2301.07067`}
               language="bash"
@@ -152,10 +155,25 @@ Include an interactive visualization of the self-attention weights.`}
             <Lightbulb className="h-5 w-5 text-violet-500 flex-shrink-0 mt-0.5" />
             <div>
               <h3 className="font-medium text-violet-600 dark:text-violet-400">
+                Use HTML Links for Richer Context
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                When available, use the HTML version URL (e.g., arxiv.org/html/...) instead
+                of the abstract or PDF link. HTML pages let us extract the paper{"'"}s figures
+                and diagrams, giving the AI visual context to create better explorables.
+                Not all papers have an HTML version.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3 p-4 rounded-lg bg-violet-500/10 border border-violet-500/20">
+            <Lightbulb className="h-5 w-5 text-violet-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-medium text-violet-600 dark:text-violet-400">
                 Iterate on Results
               </h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Use follow-up messages to refine the explorable. Ask for more detail 
+                Use follow-up messages to refine the explorable. Ask for more detail
                 on specific concepts or additional interactivity.
               </p>
             </div>

@@ -348,6 +348,16 @@ function CreatePageContent() {
             mimeType: paper.pdf.mimeType,
           })
         }
+
+        // Include extracted HTML images (figures/diagrams from the paper)
+        if (paper.htmlImages) {
+          paper.htmlImages.forEach((img) => {
+            content.push({
+              type: 'image',
+              image: img.data,
+            })
+          })
+        }
       })
     }
 
