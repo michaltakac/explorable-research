@@ -26,6 +26,7 @@ export type ArxivPaper = {
     size: number
     filename: string
   }
+  htmlImages?: Array<{ data: string; mimeType: string }>
 }
 
 function truncateFileName(name: string, maxLength: number = 30): string {
@@ -402,7 +403,7 @@ export function CreatorInput({
                   <div className="flex gap-2">
                     <input
                       type="text"
-                      placeholder="https://arxiv.org/abs/2301.00001"
+                      placeholder="https://arxiv.org/abs/2301.00001 or /html/"
                       value={arxivUrl}
                       onChange={(e) => {
                         setArxivUrl(e.target.value)
@@ -434,7 +435,7 @@ export function CreatorInput({
                     <p className="text-xs text-red-500 mt-2">{arxivError}</p>
                   )}
                   <p className="text-xs text-muted-foreground mt-3">
-                    Paste an ArXiv URL or ID (e.g., 2301.00001)
+                    Paste an ArXiv URL or ID (abs, pdf, or html link). HTML links extract paper figures for richer context.
                   </p>
                 </div>
               )}
@@ -478,7 +479,7 @@ export function CreatorInput({
                   <div className="flex gap-2">
                     <input
                       type="text"
-                      placeholder="https://arxiv.org/abs/2301.00001"
+                      placeholder="https://arxiv.org/abs/2301.00001 or /html/"
                       value={arxivUrl}
                       onChange={(e) => {
                         setArxivUrl(e.target.value)
