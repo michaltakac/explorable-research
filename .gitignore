@@ -38,3 +38,8 @@ next-env.d.ts
 
 # supabase
 supabase/.temp/
+/supabase/seed.sql
+
+# cloudflare workers
+workers/**/.wrangler/
+workers/**/test-files/

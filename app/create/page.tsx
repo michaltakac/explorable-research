@@ -59,6 +59,9 @@ function CreatePageContent() {
   const [currentTab, setCurrentTab] = useState<'code' | 'fragment'>('code')
   const [isPreviewLoading, setIsPreviewLoading] = useState(false)
   const [isPreviewExpanded, setIsPreviewExpanded] = useState(false)
+  const [savedProjectId, setSavedProjectId] = useState<string | null>(null)
+  const [publishedUrl, setPublishedUrl] = useState<string | null>(null)
+  const [isStaticDeployed, setIsStaticDeployed] = useState(false)
   const [isAuthDialogOpen, setAuthDialog] = useState(false)
   const [authView, setAuthView] = useState<ViewType>('sign_in')
   const [isRateLimited, setIsRateLimited] = useState(false)
@@ -81,9 +84,9 @@ function CreatePageContent() {
   }: {
     fragment: DeepPartial<FragmentSchema> | undefined
     result: ExecutionResult | undefined
-  }) {
+  }): Promise<string | null> {
     if (!session?.access_token || !fragment || !result) {
-      return
+      return null
     }
 
     const sanitizedMessages = sanitizeMessagesForStorage(
@@ -116,8 +119,12 @@ function CreatePageContent() {
       if (!response.ok) {
         throw new Error('Failed to save project')
       }
+
+      const data = await response.json()
+      return data.id
     } catch {
       console.error('Failed to save project')
+      return null
     }
   }
 
@@ -191,7 +198,10 @@ function CreatePageContent() {
         setMessage({ result: sandboxResult })
         setCurrentTab('fragment')
         setIsPreviewLoading(false)
-        await saveProject({ fragment, result: sandboxResult })
+        const projectId = await saveProject({ fragment, result: sandboxResult })
+        if (projectId) {
+          setSavedProjectId(projectId)
+        }
       }
     },
   })
@@ -433,6 +443,9 @@ function CreatePageContent() {
     setResult(undefined)
     setCurrentTab('code')
     setIsPreviewLoading(false)
+    setSavedProjectId(null)
+    setPublishedUrl(null)
+    setIsStaticDeployed(false)
   }
 
   function setCurrentPreview(preview: {
@@ -441,6 +454,11 @@ function CreatePageContent() {
   }) {
     setFragment(preview.fragment)
     setResult(preview.result)
+  }
+
+  function handlePublishChange(published: boolean, url: string | null) {
+    setIsStaticDeployed(published)
+    setPublishedUrl(url)
   }
 
   function handleUndo() {
@@ -529,6 +547,11 @@ function CreatePageContent() {
               }}
               isExpanded={isPreviewExpanded}
               onToggleExpand={() => setIsPreviewExpanded(!isPreviewExpanded)}
+              projectId={savedProjectId ?? undefined}
+              accessToken={session?.access_token}
+              publishedUrl={publishedUrl}
+              isStaticDeployed={isStaticDeployed}
+              onPublishChange={handlePublishChange}
             />
           </div>
         </div>

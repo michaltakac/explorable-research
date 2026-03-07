@@ -1,4 +1,5 @@
 import { DeployDialog } from './deploy-dialog'
+import { PublishDialog } from './publish-dialog'
 import { FragmentCode } from './fragment-code'
 import { FragmentPreview } from './fragment-preview'
 import { Button } from '@/components/ui/button'
@@ -26,6 +27,13 @@ export function Preview({
   onClose,
   isExpanded,
   onToggleExpand,
+  projectId,
+  accessToken,
+  publishedUrl,
+  isStaticDeployed,
+  onPublishChange,
+  onRegenerateSandbox,
+  isRegenerating,
 }: {
   selectedTab: 'code' | 'fragment'
   onSelectedTabChange: Dispatch<SetStateAction<'code' | 'fragment'>>
@@ -36,6 +44,13 @@ export function Preview({
   onClose: () => void
   isExpanded?: boolean
   onToggleExpand?: () => void
+  projectId?: string
+  accessToken?: string
+  publishedUrl?: string | null
+  isStaticDeployed?: boolean
+  onPublishChange?: (published: boolean, url: string | null) => void
+  onRegenerateSandbox?: () => Promise<void>
+  isRegenerating?: boolean
 }) {
   if (!fragment) {
     return null
@@ -126,6 +141,16 @@ export function Preview({
           </div>
           {result && (
             <div className="flex items-center justify-end gap-2">
+              {isLinkAvailable && projectId && accessToken && getTemplateId(fragment?.template || '') === 'html-developer' && (
+                <PublishDialog
+                  projectId={projectId}
+                  sbxId={result.sbxId}
+                  publishedUrl={publishedUrl ?? null}
+                  isStaticDeployed={isStaticDeployed ?? false}
+                  accessToken={accessToken}
+                  onPublishChange={onPublishChange}
+                />
+              )}
               {isLinkAvailable && (
                 <DeployDialog
                   url={(result as ExecutionResultWeb).url!}
@@ -150,7 +175,13 @@ export function Preview({
               )}
             </TabsContent>
             <TabsContent value="fragment" className="h-full">
-              {result && <FragmentPreview result={result as ExecutionResult} />}
+              {result && (
+                <FragmentPreview
+                  result={result as ExecutionResult}
+                  onRegenerateSandbox={onRegenerateSandbox}
+                  isRegenerating={isRegenerating}
+                />
+              )}
             </TabsContent>
           </div>
         )}

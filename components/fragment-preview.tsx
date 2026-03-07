@@ -9,10 +9,22 @@ import {
   ExecutionResultWeb,
 } from '@/lib/types'
 
-export function FragmentPreview({ result }: { result: ExecutionResult }) {
+type FragmentPreviewProps = {
+  result: ExecutionResult
+  onRegenerateSandbox?: () => Promise<void>
+  isRegenerating?: boolean
+}
+
+export function FragmentPreview({ result, onRegenerateSandbox, isRegenerating }: FragmentPreviewProps) {
   if (getTemplateId(result.template) === 'code-interpreter-v1') {
     return <FragmentInterpreter result={result as ExecutionResultInterpreter} />
   }
 
-  return <FragmentWeb result={result as ExecutionResultWeb} />
+  return (
+    <FragmentWeb
+      result={result as ExecutionResultWeb}
+      onRegenerateSandbox={onRegenerateSandbox}
+      isRegenerating={isRegenerating}
+    />
+  )
 }
