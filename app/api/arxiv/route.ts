@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient, getAccessToken } from '@/lib/supabase-server'
 import { uploadPdfToStorage, MAX_PDF_SIZE, formatFileSize } from '@/lib/pdf-storage'
+import { isArxivHtmlUrl, fetchArxivHtmlContent, downloadArxivImages, ArxivImage } from '@/lib/arxiv'
 
 export const maxDuration = 60
 
@@ -23,9 +24,12 @@ function extractArxivId(input: string): string | null {
     /arxiv\.org\/abs\/(\d{4}\.\d{4,5}(?:v\d+)?)/i,
     // https://arxiv.org/pdf/2301.00001.pdf
     /arxiv\.org\/pdf\/(\d{4}\.\d{4,5}(?:v\d+)?)(?:\.pdf)?/i,
+    // https://arxiv.org/html/2301.00001 or https://arxiv.org/html/2301.00001v1
+    /arxiv\.org\/html\/(\d{4}\.\d{4,5}(?:v\d+)?)/i,
     // Old format: https://arxiv.org/abs/hep-th/9901001
     /arxiv\.org\/abs\/([a-z-]+\/\d{7}(?:v\d+)?)/i,
     /arxiv\.org\/pdf\/([a-z-]+\/\d{7}(?:v\d+)?)(?:\.pdf)?/i,
+    /arxiv\.org\/html\/([a-z-]+\/\d{7}(?:v\d+)?)/i,
   ]
 
   for (const pattern of patterns) {
@@ -142,6 +146,18 @@ export async function POST(req: NextRequest) {
       console.warn('Failed to fetch ArXiv metadata')
     }
 
+    // Extract images from HTML version if the user provided an HTML URL
+    let htmlImages: ArxivImage[] | undefined
+    if (isArxivHtmlUrl(url)) {
+      const htmlContent = await fetchArxivHtmlContent(arxivId, title)
+      if (htmlContent?.isValid && htmlContent.imageUrls.length > 0) {
+        htmlImages = await downloadArxivImages(htmlContent.imageUrls)
+        if (htmlImages.length > 0) {
+          console.log(`Extracted ${htmlImages.length} images from ArXiv HTML page`)
+        }
+      }
+    }
+
     // If authenticated, upload to Supabase Storage
     if (userId && supabase) {
       const uploadResult = await uploadPdfToStorage(supabase, userId, {
@@ -162,6 +178,7 @@ export async function POST(req: NextRequest) {
             size: pdfBuffer.byteLength,
             filename,
           },
+          htmlImages,
         })
       }
 
@@ -193,6 +210,7 @@ export async function POST(req: NextRequest) {
         size: pdfBuffer.byteLength,
         filename,
       },
+      htmlImages,
     })
   } catch (error) {
     console.error('ArXiv fetch error:', error)

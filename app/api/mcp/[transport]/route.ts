@@ -115,7 +115,7 @@ const mcpHandler = createMcpHandler(
             .string()
             .url()
             .optional()
-            .describe('ArXiv paper URL (e.g., https://arxiv.org/abs/1706.03762)'),
+            .describe('ArXiv paper URL (e.g., https://arxiv.org/abs/1706.03762 or https://arxiv.org/html/1706.03762). HTML URLs will extract paper figures for richer context.'),
           pdf_file: z
             .string()
             .optional()
@@ -229,6 +229,7 @@ const mcpHandler = createMcpHandler(
         const pdfMimeType = 'application/pdf'
         let arxivTitle: string | undefined
         let arxivAbstract: string | undefined
+        let arxivHtmlImages: Array<{ data: string; mimeType: string }> | undefined
 
         if (args.arxiv_url) {
           const arxivResult = await processArxivPaper(args.arxiv_url, {
@@ -261,6 +262,11 @@ const mcpHandler = createMcpHandler(
             pdfStoragePath = arxivResult.pdf.storagePath
           } else {
             pdfData = arxivResult.pdf.data
+          }
+
+          // Include extracted HTML images as additional context
+          if (arxivResult.htmlImages && arxivResult.htmlImages.length > 0) {
+            arxivHtmlImages = arxivResult.htmlImages
           }
         } else if (args.pdf_file && args.pdf_filename) {
           try {
@@ -317,6 +323,7 @@ const mcpHandler = createMcpHandler(
           pdfStoragePath,
           pdfFilename,
           pdfMimeType,
+          images: arxivHtmlImages,
           instruction: args.instruction,
           arxivTitle,
           arxivAbstract,

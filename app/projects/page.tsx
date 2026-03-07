@@ -23,7 +23,7 @@ import { useToast } from '@/components/ui/use-toast'
 import { useAuth } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import { ExecutionResult } from '@/lib/types'
-import { Loader2, Trash2 } from 'lucide-react'
+import { Loader2, Trash2, Globe, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
@@ -35,6 +35,9 @@ type ProjectSummary = {
   description: string | null
   created_at: string
   result: ExecutionResult | null
+  published_url: string | null
+  subdomain_slug: string | null
+  is_static_deployed: boolean
 }
 
 function formatDate(value: string) {
@@ -163,6 +166,43 @@ export default function ProjectsPage() {
       setIsDeleting(false)
       setDeleteDialogOpen(false)
       setProjectToDelete(null)
+    }
+  }
+
+  async function handleUnpublish(projectId: string) {
+    if (!session?.access_token) return
+
+    try {
+      const response = await fetch(`/api/projects/${projectId}/publish`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to unpublish project')
+      }
+
+      // Update the project in the list
+      setProjects((prev) =>
+        prev.map((p) =>
+          p.id === projectId
+            ? { ...p, is_static_deployed: false, published_url: null, subdomain_slug: null }
+            : p
+        )
+      )
+
+      toast({
+        title: 'Project unpublished',
+        description: 'The project has been removed from the web.',
+      })
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to unpublish the project. Please try again.',
+        variant: 'destructive',
+      })
     }
   }
 
@@ -324,6 +364,29 @@ export default function ProjectsPage() {
                               Open preview
                             </a>
                           </Button>
+                        )}
+                        {project.is_static_deployed && project.published_url && (
+                          <>
+                            <Button asChild variant="outline">
+                              <a
+                                href={project.published_url}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                <Globe className="mr-2 h-4 w-4" />
+                                View published
+                                <ExternalLink className="ml-2 h-3 w-3" />
+                              </a>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-muted-foreground"
+                              onClick={() => handleUnpublish(project.id)}
+                            >
+                              Unpublish
+                            </Button>
+                          </>
                         )}
                       </CardContent>
                     </Card>

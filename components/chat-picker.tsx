@@ -20,6 +20,7 @@ export function ChatPicker({
   models,
   languageModel,
   onLanguageModelChange,
+  templateDisabled = false,
 }: {
   templates: Templates
   selectedTemplate: string
@@ -27,6 +28,7 @@ export function ChatPicker({
   models: LLMModel[]
   languageModel: LLMModelConfig
   onLanguageModelChange: (config: LLMModelConfig) => void
+  templateDisabled?: boolean
 }) {
   return (
     <div className="flex items-center space-x-2">
@@ -34,7 +36,9 @@ export function ChatPicker({
         <Select
           name="template"
           defaultValue={selectedTemplate}
+          value={selectedTemplate}
           onValueChange={onSelectedTemplateChange}
+          disabled={templateDisabled}
         >
           <SelectTrigger className="whitespace-nowrap border-none shadow-none focus:ring-0 px-0 py-0 h-6 text-xs">
             <SelectValue placeholder="Select a persona" />
@@ -76,6 +80,7 @@ export function ChatPicker({
         <Select
           name="languageModel"
           defaultValue={languageModel.model}
+          value={languageModel.model}
           onValueChange={(e) => onLanguageModelChange({ model: e })}
         >
           <SelectTrigger className="whitespace-nowrap border-none shadow-none focus:ring-0 px-0 py-0 h-6 text-xs">
