@@ -190,9 +190,10 @@ describe('API V1 Schemas', () => {
     })
 
     it('should accept valid model IDs', () => {
+      const models = getAvailableModels()
       const validRequest = {
         arxiv_url: 'https://arxiv.org/abs/2301.00001',
-        model: 'anthropic/claude-sonnet-4.5:online',
+        model: models[0].id,
       }
 
       const result = createProjectSchema.safeParse(validRequest)
@@ -293,9 +294,10 @@ describe('API V1 Schemas', () => {
     })
 
     it('should accept model override', () => {
+      const models = getAvailableModels()
       const validRequest = {
         instruction: 'Add a slider control',
-        model: 'openai/gpt-5.2:online',
+        model: models[0].id,
       }
 
       const result = continueProjectSchema.safeParse(validRequest)
@@ -341,9 +343,10 @@ describe('API V1 Schemas', () => {
     })
 
     it('getModelById should return model for valid ID', () => {
-      const model = getModelById('anthropic/claude-sonnet-4.5:online')
+      const models = getAvailableModels()
+      const model = getModelById(models[0].id)
       expect(model).toBeDefined()
-      expect(model?.id).toBe('anthropic/claude-sonnet-4.5:online')
+      expect(model?.id).toBe(models[0].id)
     })
 
     it('getModelById should return undefined for invalid ID', () => {

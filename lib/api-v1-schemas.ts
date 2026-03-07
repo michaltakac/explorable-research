@@ -184,8 +184,8 @@ export function createApiError(
  * Get default model from models.json
  */
 export function getDefaultModel() {
-  // Use the first model as default (google/gemini-3-pro-preview:online)
-  return modelsJson.models[6] // gemini-3-pro-preview
+  // Use Gemini as default
+  return modelsJson.models[4] // gemini-3.1-pro-preview
 }
 
 /**
